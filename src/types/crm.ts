@@ -85,3 +85,4 @@ export interface CrmPosProof {
   notes?: string;
   installed_at: string;
 }
+

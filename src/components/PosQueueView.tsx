@@ -251,3 +251,4 @@ export const PosQueueView: React.FC<PosQueueViewProps> = ({
     </div>
   );
 };
+

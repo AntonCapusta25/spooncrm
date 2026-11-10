@@ -228,3 +228,4 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
     </div>
   );
 };
+

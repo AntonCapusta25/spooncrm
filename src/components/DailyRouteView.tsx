@@ -350,3 +350,4 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
     </div>
   );
 };
+

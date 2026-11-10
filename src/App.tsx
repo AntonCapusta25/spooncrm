@@ -125,6 +125,7 @@ export function App() {
               <MapView
                 leads={filteredLeads}
                 onSelectLead={setSelectedLead}
+                onOpenProofModal={setProofModalLead}
                 onCheckInLead={(lead) => {
                   setSelectedLead(lead);
                 }}
@@ -193,3 +194,4 @@ export function App() {
 }
 
 export default App;
+

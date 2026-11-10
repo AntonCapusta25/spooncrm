@@ -193,3 +193,4 @@ export const PosProofModal: React.FC<PosProofModalProps> = ({
     </div>
   );
 };
+
