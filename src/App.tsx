@@ -11,18 +11,19 @@ import { DailyRouteView } from './components/DailyRouteView';
 import { PosQueueView } from './components/PosQueueView';
 import { LeadDetailModal } from './components/LeadDetailModal';
 import { PosProofModal } from './components/PosProofModal';
-import { AuthModal } from './components/AuthModal';
+import { LoginPage } from './components/LoginPage';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
+  const [session, setSession] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [profiles, setProfiles] = useState<CrmProfile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<CrmProfile | null>(null);
   const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue'>('map');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Notion Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -36,12 +37,33 @@ export function App() {
     search: ''
   });
 
+  // Auth Session Lifecycle
   useEffect(() => {
-    loadData();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsCheckingAuth(false);
+      if (session) {
+        loadData(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsCheckingAuth(false);
+      if (session) {
+        loadData(session.user);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Supabase Realtime channel setup
   useEffect(() => {
+    if (!session) return;
+
     const channel = supabase
       .channel('crm_notion_realtime')
       .on(
@@ -64,9 +86,9 @@ export function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [session]);
 
-  const loadData = async () => {
+  const loadData = async (user?: any) => {
     setIsLoading(true);
     const [leadsData, profilesData] = await Promise.all([
       fetchLeads(),
@@ -75,9 +97,22 @@ export function App() {
     setLeads(leadsData);
     setProfiles(profilesData);
 
-    if (profilesData.length > 0) {
-      const oleksandr = profilesData.find(p => p.role === 'pos_installer') || profilesData[0];
-      setCurrentProfile(oleksandr);
+    // Resolve profile based on authenticated user's email
+    if (user?.email) {
+      const matched = profilesData.find(p => p.email.toLowerCase() === user.email.toLowerCase());
+      if (matched) {
+        setCurrentProfile(matched);
+      } else {
+        // Fallback default
+        setCurrentProfile({
+          id: user.id,
+          name: user.user_metadata?.display_name || user.email.split('@')[0],
+          email: user.email,
+          role: 'salesperson'
+        });
+      }
+    } else if (profilesData.length > 0) {
+      setCurrentProfile(profilesData[0]);
     }
     setIsLoading(false);
   };
@@ -86,6 +121,12 @@ export function App() {
     const data = await fetchLeads();
     setLeads(data);
     setSelectedLead(prev => prev ? data.find(l => l.id === prev.id) || null : null);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setCurrentProfile(null);
   };
 
   // Extract unique cuisines
@@ -102,35 +143,20 @@ export function App() {
     return Array.from(set).slice(0, 30);
   }, [leads]);
 
-  // Master Filter Engine (Applied across Map, Board, Table, and Dispatch)
+  // Master Filter Engine
   const filteredLeads = useMemo(() => {
     return leads.filter(l => {
-      // 1. Stage
       if (filters.stage !== 'all' && l.stage !== filters.stage) return false;
-
-      // 2. Cuisine
       if (filters.cuisine !== 'all' && (!l.cuisine || !l.cuisine.toLowerCase().includes(filters.cuisine.toLowerCase()))) return false;
-
-      // 3. Assignee
       if (filters.assigneeId === 'unassigned') {
         if (l.assignees && l.assignees.length > 0) return false;
       } else if (filters.assigneeId !== 'all') {
         if (!l.assignees?.some(a => a.id === filters.assigneeId)) return false;
       }
-
-      // 4. Rating
       if (filters.minRating > 0 && (l.rating || 0) < filters.minRating) return false;
-
-      // 5. Phone toggle
       if (filters.hasPhone && !l.phone) return false;
-
-      // 6. POS Proof toggle
       if (filters.hasProof && (!l.proofs || l.proofs.length === 0)) return false;
-
-      // 7. District
       if (filters.district !== 'all' && !l.address.includes(filters.district)) return false;
-
-      // 8. Search query
       if (filters.search.trim()) {
         const q = filters.search.toLowerCase();
         const matchesName = l.name.toLowerCase().includes(q);
@@ -139,13 +165,37 @@ export function App() {
         const matchesPhone = l.phone && l.phone.includes(q);
         if (!matchesName && !matchesAddr && !matchesCuisine && !matchesPhone) return false;
       }
-
       return true;
     });
   }, [leads, filters]);
 
   const posHandoverCount = leads.filter(l => l.stage === 'pos_handover').length;
 
+  // 1. Loading auth state
+  if (isCheckingAuth) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center gap-2 bg-white text-[#787774]">
+        <Loader2 className="w-5 h-5 animate-spin text-[#FF5A1F]" />
+        <p className="text-xs font-medium">Connecting to Spoonful...</p>
+      </div>
+    );
+  }
+
+  // 2. Gated: Show Simple Notion Login if not authenticated
+  if (!session) {
+    return (
+      <LoginPage 
+        onLoginSuccess={() => {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            if (session) loadData(session.user);
+          });
+        }} 
+      />
+    );
+  }
+
+  // 3. Authenticated: Render Notion Workspace
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-[#37352F] font-['Inter',sans-serif]">
       
@@ -153,9 +203,7 @@ export function App() {
       <Sidebar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
-        profiles={profiles}
         currentProfile={currentProfile}
-        onProfileChange={setCurrentProfile}
         posQueueCount={posHandoverCount}
         totalLeadsCount={leads.length}
         selectedDistrict={filters.district}
@@ -163,7 +211,7 @@ export function App() {
           setFilters(prev => ({ ...prev, district: d }));
           setCurrentTab('map');
         }}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main Workspace Canvas */}
@@ -197,7 +245,7 @@ export function App() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#787774]">
               <Loader2 className="w-6 h-6 animate-spin text-[#FF5A1F]" />
-              <p className="text-xs font-medium">Loading Spoonful Workspace from Supabase...</p>
+              <p className="text-xs font-medium">Loading Database...</p>
             </div>
           ) : (
             <>
@@ -278,15 +326,6 @@ export function App() {
           currentProfile={currentProfile}
         />
       )}
-
-      {/* Supabase Team Auth & Role Switcher Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        profiles={profiles}
-        currentProfile={currentProfile}
-        onSelectProfile={setCurrentProfile}
-      />
 
     </div>
   );

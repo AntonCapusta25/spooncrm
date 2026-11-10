@@ -9,14 +9,12 @@ import { CrmProfile } from '../types/crm';
 interface SidebarProps {
   currentTab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue';
   onTabChange: (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue') => void;
-  profiles: CrmProfile[];
   currentProfile: CrmProfile | null;
-  onProfileChange: (profile: CrmProfile) => void;
   posQueueCount: number;
   totalLeadsCount: number;
   selectedDistrict: string;
   onDistrictSelect: (district: string) => void;
-  onOpenAuth: () => void;
+  onLogout: () => void;
 }
 
 const DISTRICTS = [
@@ -33,14 +31,12 @@ const DISTRICTS = [
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onTabChange,
-  profiles,
   currentProfile,
-  onProfileChange,
   posQueueCount,
   totalLeadsCount,
   selectedDistrict,
   onDistrictSelect,
-  onOpenAuth
+  onLogout
 }) => {
   return (
     <aside className="w-64 h-screen bg-[#F7F6F3] border-r border-[#EDEDEB] flex flex-col justify-between shrink-0 select-none text-[#37352F] text-[13px]">
@@ -48,33 +44,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Top Section */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         
-        {/* Workspace Dropdown */}
-        <div className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-[#EFEFED] transition-colors cursor-pointer group">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-5 h-5 rounded bg-[#FF5A1F] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              🥄
-            </div>
-            <div className="min-w-0">
-              <span className="font-semibold text-xs tracking-tight text-[#37352F] block truncate">
-                Spoonful Ops
-              </span>
-            </div>
+        {/* Workspace Brand Header */}
+        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-[#EFEFED]">
+          <div className="w-5 h-5 rounded bg-[#FF5A1F] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            🥄
           </div>
-          
-          <select
-            value={currentProfile?.id || ''}
-            onChange={(e) => {
-              const p = profiles.find(item => item.id === e.target.value);
-              if (p) onProfileChange(p);
-            }}
-            className="bg-transparent text-[11px] text-[#787774] hover:text-[#37352F] cursor-pointer focus:outline-none max-w-[100px] truncate"
-          >
-            {profiles.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name.split(' ')[0]} ({p.role === 'pos_installer' ? 'POS' : p.role})
-              </option>
-            ))}
-          </select>
+          <div className="min-w-0 flex-1">
+            <span className="font-semibold text-xs tracking-tight text-[#37352F] block truncate">
+              Spoonful Workspace
+            </span>
+            <span className="text-[10px] text-[#787774] block truncate">
+              Enschede Operations
+            </span>
+          </div>
         </div>
 
         {/* Action Callout: Oleksandr's POS Handover Alert */}
@@ -213,24 +195,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom Profile Bar */}
       <div className="p-3 border-t border-[#EDEDEB] bg-[#F7F6F3]">
-        <div 
-          onClick={onOpenAuth}
-          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[#EFEFED] transition-colors cursor-pointer group"
-          title="Click to switch account or sign in"
-        >
+        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-[#EFEFED]">
           <div className="w-6 h-6 rounded-full bg-[#E3E2E0] flex items-center justify-center font-bold text-xs text-[#37352F]">
             {currentProfile?.name.charAt(0) || 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold text-[#37352F] truncate flex items-center justify-between">
-              <span>{currentProfile?.name || 'Spoonful Team'}</span>
-              <span className="text-[10px] text-[#787774] group-hover:text-[#37352F] group-hover:underline">Auth ▾</span>
+            <div className="text-xs font-semibold text-[#37352F] truncate">
+              {currentProfile?.name || 'Spoonful Team'}
             </div>
             <div className="text-[10px] text-[#787774] capitalize">
               {currentProfile?.role === 'pos_installer' ? 'POS Specialist' : currentProfile?.role}
             </div>
           </div>
         </div>
+
+        <button
+          onClick={onLogout}
+          className="w-full mt-2 text-center text-[11px] font-medium text-[#787774] hover:text-[#D44026] hover:bg-[#FFE2DD] py-1 rounded transition-colors"
+        >
+          Sign out
+        </button>
       </div>
 
     </aside>
