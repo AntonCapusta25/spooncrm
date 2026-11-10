@@ -4,7 +4,7 @@ import { updateLeadStage, updateLead, toggleLeadAssignee, provisionHyperzodMerch
 import confetti from 'canvas-confetti';
 import { 
   X, MapPin, Phone, Globe, Star, Mail, UserPlus, CheckCircle, 
-  Camera, Zap, Clock, Navigation, AlertCircle, ExternalLink 
+  Camera, Zap, Clock, Navigation, ExternalLink, ChevronDown, Plus, Sparkles
 } from 'lucide-react';
 
 interface LeadDetailModalProps {
@@ -16,15 +16,15 @@ interface LeadDetailModalProps {
   currentProfile: CrmProfile | null;
 }
 
-const STAGES: { value: LeadStage; label: string }[] = [
-  { value: 'discovered', label: 'Discovered' },
-  { value: 'contacted', label: 'Contacted' },
-  { value: 'meeting_scheduled', label: 'Meeting / Tasting' },
-  { value: 'contract_signed', label: 'Contract Signed' },
-  { value: 'pos_handover', label: 'Handed to Oleksandr (POS)' },
-  { value: 'pos_installed', label: 'POS Proof Attached' },
-  { value: 'onboarded', label: 'Onboarded & Live' },
-  { value: 'lost', label: 'Lost / Closed' },
+const STAGES: { value: LeadStage; label: string; bg: string; text: string }[] = [
+  { value: 'discovered', label: 'Discovered', bg: 'bg-[#E3E2E0]', text: 'text-[#5A5852]' },
+  { value: 'contacted', label: 'Contacted', bg: 'bg-[#D3E5EF]', text: 'text-[#1879B5]' },
+  { value: 'meeting_scheduled', label: 'Meeting Scheduled', bg: 'bg-[#E8DEEE]', text: 'text-[#8232B4]' },
+  { value: 'contract_signed', label: 'Contract Signed', bg: 'bg-[#DBEDDB]', text: 'text-[#286E34]' },
+  { value: 'pos_handover', label: '⚡ Handed to Oleksandr', bg: 'bg-[#FFE2DD]', text: 'text-[#D44026]' },
+  { value: 'pos_installed', label: 'Proof Attached', bg: 'bg-[#D3E5EF]', text: 'text-[#0B6E99]' },
+  { value: 'onboarded', label: 'Live in Hyperzod', bg: 'bg-[#D4EEE2]', text: 'text-[#0F7B54]' },
+  { value: 'lost', label: 'Lost', bg: 'bg-[#FFE2DD]', text: 'text-[#E03E3E]' },
 ];
 
 export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
@@ -45,22 +45,21 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 
   // Log visit state
   const [newVisitNotes, setNewVisitNotes] = useState('');
-  const [newVisitOutcome, setNewVisitOutcome] = useState('In-person follow-up');
+  const [newVisitOutcome, setNewVisitOutcome] = useState('In-person visit');
 
-  // Handle stage change
+  const currentStageObj = STAGES.find(s => s.value === lead.stage) || STAGES[0];
+
   const handleStageChange = async (newStage: LeadStage) => {
     await updateLeadStage(lead.id, newStage);
     onRefresh();
   };
 
-  // Handle Multi-Assignee Toggle
   const handleToggleAssignee = async (profileId: string) => {
     const isAssigned = lead.assignees?.some(a => a.id === profileId) || false;
     await toggleLeadAssignee(lead.id, profileId, isAssigned);
     onRefresh();
   };
 
-  // Save edits
   const handleSaveDetails = async () => {
     await updateLead(lead.id, {
       contact_person: contactPerson,
@@ -68,10 +67,9 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       notes: notes
     });
     onRefresh();
-    alert("Lead details updated!");
+    alert("Page properties saved!");
   };
 
-  // 1-Click Provision in Hyperzod
   const handleProvisionHyperzod = async () => {
     setIsProvisioning(true);
     setProvisionResult(null);
@@ -80,7 +78,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     setIsProvisioning(false);
 
     if (res.success) {
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       setProvisionResult({
         success: true,
         text: `Merchant created in Hyperzod! ID: ${res.hyperzod_merchant_id}`
@@ -89,12 +87,11 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     } else {
       setProvisionResult({
         success: false,
-        text: res.error || 'Failed to create merchant'
+        text: res.error || 'Provisioning failed'
       });
     }
   };
 
-  // Add quick visit
   const handleAddVisit = async (e: React.FormEvent) => {
     e.preventDefault();
     await logVisit({
@@ -110,138 +107,216 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-xl h-full bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-xs animate-in fade-in duration-150 select-none">
+      <div className="w-full max-w-2xl h-full bg-white border-l border-[#EDEDEB] shadow-2xl flex flex-col overflow-hidden text-[#37352F]">
         
-        {/* Top Header */}
-        <div className="p-5 border-b border-slate-800 bg-slate-850 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-xs font-semibold text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full">
-                {lead.cuisine || 'Restaurant'}
-              </span>
-              {lead.rating && (
-                <span className="flex items-center gap-1 text-xs font-bold text-amber-400">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  {lead.rating} ({lead.reviews_count || 0} reviews)
-                </span>
-              )}
-            </div>
-            <h2 className="text-xl font-black text-white leading-tight">{lead.name}</h2>
-            <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-              <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              {lead.address}
-            </p>
+        {/* Top Minimal Action Bar */}
+        <div className="p-3 border-b border-[#EDEDEB] flex items-center justify-between text-xs text-[#787774]">
+          <div className="flex items-center gap-2">
+            <span>Spoonful</span>
+            <span>/</span>
+            <span className="text-[#37352F] font-medium truncate max-w-[200px]">{lead.name}</span>
           </div>
 
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="p-1 rounded hover:bg-[#F7F6F3] text-[#787774] hover:text-[#37352F]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+        {/* Scrollable Page Document Body */}
+        <div className="flex-1 overflow-y-auto px-10 py-8 space-y-6 custom-scrollbar">
 
-          {/* Stage Selector Bar */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5">
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Current Pipeline Stage:
-            </label>
-            <select
-              value={lead.stage}
-              onChange={(e) => handleStageChange(e.target.value as LeadStage)}
-              className="w-full bg-slate-800 text-xs font-bold text-orange-400 border border-slate-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-            >
-              {STAGES.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+          {/* Notion Page Icon & Title */}
+          <div>
+            <div className="text-4xl mb-3">🍽️</div>
+            <h1 className="text-2xl font-bold text-[#37352F] tracking-tight leading-tight">
+              {lead.name}
+            </h1>
           </div>
 
-          {/* OLEKSANDR'S POS INTEGRATION & PROVISIONING CARD */}
-          <div className="bg-gradient-to-br from-orange-950/40 to-slate-900 border border-orange-500/40 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-orange-400 fill-orange-400" />
-                <h3 className="text-xs font-black text-white tracking-wide uppercase">
-                  POS Integration & Hyperzod Provisioning
-                </h3>
+          {/* NOTION PROPERTIES TABLE */}
+          <div className="space-y-2 border-y border-[#EDEDEB] py-4 text-[13px]">
+            
+            {/* Property: Stage */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>🏷️</span>
+                <span>Stage</span>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                {lead.stage === 'onboarded' ? 'Live Store' : 'Handover Pipeline'}
-              </span>
+              <div className="flex-1">
+                <select
+                  value={lead.stage}
+                  onChange={(e) => handleStageChange(e.target.value as LeadStage)}
+                  className={`px-2 py-0.5 rounded text-xs font-semibold cursor-pointer border-none focus:outline-none ${currentStageObj.bg} ${currentStageObj.text}`}
+                >
+                  {STAGES.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Photo Proof Status */}
-            {lead.proofs && lead.proofs.length > 0 ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <img
-                    src={lead.proofs[0].photo_url}
-                    alt="POS Proof"
-                    className="w-16 h-16 rounded-lg object-cover border border-cyan-500 cursor-pointer"
-                    onClick={() => window.open(lead.proofs![0].photo_url, '_blank')}
-                  />
-                  <div className="text-xs">
-                    <div className="font-bold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Counter Photo Proof Verified
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">
-                      Model: {lead.proofs[0].terminal_model}
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      Installed by: {lead.proofs[0].uploader_name}
+            {/* Property: Assignees */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>👤</span>
+                <span>Assignees</span>
+              </div>
+              <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                {profiles.map(p => {
+                  const isAssigned = lead.assignees?.some(a => a.id === p.id) || false;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handleToggleAssignee(p.id)}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
+                        isAssigned
+                          ? 'bg-[#E3E2E0] text-[#37352F] font-semibold'
+                          : 'bg-[#F7F6F3] text-[#787774] hover:bg-[#EFEFED]'
+                      }`}
+                    >
+                      <span>{p.name.split(' ')[0]}</span>
+                      {isAssigned ? '✓' : '+'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Property: Address */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>📍</span>
+                <span>Address</span>
+              </div>
+              <div className="flex-1 text-xs text-[#37352F] truncate">
+                {lead.address}
+              </div>
+            </div>
+
+            {/* Property: Phone */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>📞</span>
+                <span>Phone</span>
+              </div>
+              <div className="flex-1 text-xs">
+                {lead.phone ? (
+                  <a href={`tel:${lead.phone}`} className="text-[#1879B5] hover:underline">
+                    {lead.phone}
+                  </a>
+                ) : (
+                  <span className="text-[#9B9A97]">Empty</span>
+                )}
+              </div>
+            </div>
+
+            {/* Property: Cuisine & Rating */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>🍴</span>
+                <span>Cuisine</span>
+              </div>
+              <div className="flex-1 flex items-center gap-2">
+                <span className="bg-[#F7F6F3] text-xs text-[#37352F] px-2 py-0.5 rounded">
+                  {lead.cuisine || 'Various'}
+                </span>
+                {lead.rating && (
+                  <span className="flex items-center gap-1 text-xs text-[#787774]">
+                    ⭐ {lead.rating} ({lead.reviews_count || 0} reviews)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Property: Commission */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>💰</span>
+                <span>Commission</span>
+              </div>
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  type="number"
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(parseFloat(e.target.value) || 12)}
+                  className="w-16 bg-[#F7F6F3] text-xs text-[#37352F] px-2 py-0.5 rounded border border-[#EDEDEB] focus:outline-none"
+                />
+                <span className="text-xs text-[#787774]">% takeaway</span>
+              </div>
+            </div>
+
+            {/* Property: POS Proof Photo */}
+            <div className="flex items-center py-1">
+              <div className="w-32 flex items-center gap-2 text-[#787774]">
+                <span>📷</span>
+                <span>POS Proof</span>
+              </div>
+              <div className="flex-1">
+                {lead.proofs && lead.proofs.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={lead.proofs[0].photo_url}
+                      alt="POS Proof"
+                      className="w-12 h-12 rounded object-cover border border-[#EDEDEB] cursor-pointer"
+                      onClick={() => window.open(lead.proofs![0].photo_url, '_blank')}
+                    />
+                    <div className="text-xs">
+                      <div className="font-semibold text-[#0F7B54]">✓ Counter Proof Attached</div>
+                      <div className="text-[11px] text-[#787774]">{lead.proofs[0].terminal_model}</div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => onOpenProofModal(lead)}
+                    className="text-xs text-[#D44026] hover:bg-[#FFE2DD] px-2 py-0.5 rounded transition-colors font-semibold"
+                  >
+                    + Attach Proof Photo
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3 bg-slate-950/50 p-3 rounded-xl border border-dashed border-orange-500/30">
-                <div className="text-xs text-slate-300">
-                  <span className="text-orange-400 font-bold block">No POS Proof Attached Yet</span>
-                  Oleksandr should upload a photo of the counter terminal.
-                </div>
-                <button
-                  onClick={() => onOpenProofModal(lead)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow transition-all flex items-center gap-1.5 shrink-0"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  Attach Proof
-                </button>
-              </div>
-            )}
+            </div>
 
-            {/* Hyperzod Provision Button */}
-            {lead.stage === 'onboarded' && lead.hyperzod_merchant_id ? (
-              <div className="bg-emerald-950/80 border border-emerald-500/40 p-3 rounded-xl text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-emerald-300">Active Hyperzod Merchant</span>
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+          </div>
+
+          {/* NOTION CALLOUT BLOCK: POS INTEGRATION & HYPERZOD */}
+          <div className="p-4 bg-[#FFF8F7] border border-[#FFE2DD] rounded-lg space-y-2">
+            <div className="flex items-start gap-2.5">
+              <span className="text-lg">💡</span>
+              <div className="flex-1">
+                <div className="text-xs font-semibold text-[#D44026]">
+                  POS Integration & Hyperzod Provisioning
                 </div>
-                <p className="font-mono text-[11px] text-emerald-200">
-                  Merchant ID: {lead.hyperzod_merchant_id}
+                <p className="text-xs text-[#787774] mt-0.5">
+                  Deliver the Sunmi terminal, verify photo proof, and provision the merchant into Hyperzod.
                 </p>
               </div>
+            </div>
+
+            {lead.stage === 'onboarded' && lead.hyperzod_merchant_id ? (
+              <div className="bg-[#D4EEE2] border border-[#B3E1CD] p-2.5 rounded text-xs text-[#0F7B54] font-mono flex items-center justify-between">
+                <span>Active Merchant ID: {lead.hyperzod_merchant_id}</span>
+                <CheckCircle className="w-4 h-4 text-[#0F7B54]" />
+              </div>
             ) : (
-              <div className="space-y-2 pt-1">
+              <div className="pt-1">
                 <button
                   onClick={handleProvisionHyperzod}
                   disabled={isProvisioning}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-[#FF5A1F] hover:bg-[#E04B14] text-white font-semibold text-xs py-2 px-3 rounded shadow-xs transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <Zap className="w-4 h-4 fill-white" />
-                  {isProvisioning ? 'Creating Merchant in Hyperzod...' : '⚡ Create Merchant in Hyperzod'}
+                  <Zap className="w-3.5 h-3.5 fill-white" />
+                  {isProvisioning ? 'Creating in Hyperzod...' : '⚡ 1-Click Provision in Hyperzod'}
                 </button>
 
                 {provisionResult && (
-                  <div className={`p-2.5 rounded-xl text-xs font-semibold ${
-                    provisionResult.success
-                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-rose-950 text-rose-300 border border-rose-500/40'
+                  <div className={`mt-2 p-2 rounded text-xs font-medium ${
+                    provisionResult.success ? 'bg-[#D4EEE2] text-[#0F7B54]' : 'bg-[#FFE2DD] text-[#D44026]'
                   }`}>
                     {provisionResult.text}
                   </div>
@@ -250,147 +325,67 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             )}
           </div>
 
-          {/* MULTI-ASSIGNEES SELECTOR */}
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Assigned Team Members (Multi-Assignee):
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {profiles.map(p => {
-                const isAssigned = lead.assignees?.some(a => a.id === p.id) || false;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => handleToggleAssignee(p.id)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      isAssigned
-                        ? 'bg-orange-500/20 text-orange-300 border-orange-500/50 shadow-sm'
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-                    }`}
-                  >
-                    <div className="w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center text-[9px] font-bold">
-                      {p.name.charAt(0)}
-                    </div>
-                    {p.name.split(' ')[0]} ({p.role === 'pos_installer' ? 'POS' : p.role})
-                    {isAssigned && <CheckCircle className="w-3 h-3 text-orange-400" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* CONTACT & COMMERCIAL FIELDS */}
-          <div className="bg-slate-850/80 border border-slate-800 rounded-2xl p-4 space-y-3">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Contact & Commission Settings
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Contact Person / Owner:</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Marco Rossi"
-                  value={contactPerson}
-                  onChange={(e) => setContactPerson(e.target.value)}
-                  className="w-full bg-slate-800 text-xs text-white border border-slate-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Commission Rate (%):</label>
-                <input
-                  type="number"
-                  value={commissionRate}
-                  onChange={(e) => setCommissionRate(parseFloat(e.target.value) || 12)}
-                  className="w-full bg-slate-800 text-xs text-white border border-slate-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              {lead.phone && (
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-bold p-2.5 rounded-xl border border-slate-700 transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                  {lead.phone}
-                </a>
-              )}
-
-              {lead.website && (
-                <a
-                  href={lead.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold p-2.5 rounded-xl border border-slate-700 transition-colors truncate"
-                >
-                  <Globe className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="truncate">Visit Website</span>
-                  <ExternalLink className="w-3 h-3 ml-auto text-slate-500" />
-                </a>
-              )}
-            </div>
-
+          {/* NOTION DOCUMENT BODY: Notes & Field Visits */}
+          <div className="space-y-4 pt-2">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Internal Notes:</label>
+              <label className="text-xs font-semibold text-[#787774] block mb-1">
+                Notes & Preferences:
+              </label>
               <textarea
-                rows={2}
+                rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes on menu, POS counter spot, or owner preferences..."
-                className="w-full bg-slate-800 text-xs text-white border border-slate-700 rounded-lg p-2.5 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-              />
-            </div>
-
-            <button
-              onClick={handleSaveDetails}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2 rounded-xl border border-slate-700 transition-colors"
-            >
-              Save Details
-            </button>
-          </div>
-
-          {/* VISITS & AUDIT LOG */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-sky-400" />
-              Visit History ({lead.visits?.length || 0})
-            </h3>
-
-            <form onSubmit={handleAddVisit} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Log note (e.g. visited owner, dropped off contract)..."
-                value={newVisitNotes}
-                onChange={(e) => setNewVisitNotes(e.target.value)}
-                required
-                className="flex-1 bg-slate-800 text-xs text-white border border-slate-700 rounded-xl px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                placeholder="Write notes on restaurant owner, preferred delivery types, or counter space..."
+                className="w-full bg-[#F7F6F3] text-xs text-[#37352F] p-3 rounded border border-[#EDEDEB] focus:outline-none focus:border-[#D4D4D0]"
               />
               <button
-                type="submit"
-                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-3 py-2 rounded-xl shrink-0"
+                onClick={handleSaveDetails}
+                className="mt-1 text-xs text-[#1879B5] hover:underline font-semibold"
               >
-                Log Visit
+                Save Notes
               </button>
-            </form>
-
-            <div className="space-y-2">
-              {lead.visits && lead.visits.length > 0 ? (
-                lead.visits.map((v) => (
-                  <div key={v.id} className="p-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs">
-                    <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                      <span>By {v.visitor_name}</span>
-                      <span>{new Date(v.visited_at).toLocaleDateString()} {new Date(v.visited_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <p className="text-slate-200 mt-1">{v.notes || v.outcome}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-500 italic">No previous visits logged.</p>
-              )}
             </div>
+
+            {/* Field Visits Activity */}
+            <div className="pt-2">
+              <h3 className="text-xs font-semibold text-[#787774] mb-2 uppercase tracking-wider">
+                Field Visits & Check-Ins ({lead.visits?.length || 0})
+              </h3>
+
+              <form onSubmit={handleAddVisit} className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Log visit note (e.g. met owner, delivered menu)..."
+                  value={newVisitNotes}
+                  onChange={(e) => setNewVisitNotes(e.target.value)}
+                  required
+                  className="flex-1 bg-[#F7F6F3] text-xs text-[#37352F] px-3 py-1.5 rounded border border-[#EDEDEB] focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="bg-[#EFEFED] hover:bg-[#E3E2E0] text-[#37352F] font-semibold text-xs px-3 py-1.5 rounded transition-colors"
+                >
+                  Log
+                </button>
+              </form>
+
+              <div className="space-y-2">
+                {lead.visits && lead.visits.length > 0 ? (
+                  lead.visits.map((v) => (
+                    <div key={v.id} className="p-2.5 bg-[#F7F6F3] rounded text-xs space-y-0.5">
+                      <div className="flex items-center justify-between text-[#787774] text-[11px]">
+                        <span>By {v.visitor_name}</span>
+                        <span>{new Date(v.visited_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-[#37352F]">{v.notes || v.outcome}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-[#9B9A97] italic">No visit history yet.</p>
+                )}
+              </div>
+            </div>
+
           </div>
 
         </div>
@@ -398,4 +393,3 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     </div>
   );
 };
-

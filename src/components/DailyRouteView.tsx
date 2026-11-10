@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CrmLead, CrmProfile, CrmVisit, CrmItineraryItem } from '../types/crm';
 import { logVisit, fetchUserItinerary, addToItinerary } from '../lib/supabase';
-import { Navigation, MapPin, CheckCircle, Clock, Calendar, Compass, Phone, Plus, AlertCircle } from 'lucide-react';
+import { Navigation, MapPin, CheckCircle, Clock, Calendar, Compass, Phone, Plus } from 'lucide-react';
 
 interface DailyRouteViewProps {
   leads: CrmLead[];
@@ -19,13 +19,11 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
   const [itinerary, setItinerary] = useState<CrmItineraryItem[]>([]);
   const [recentVisits, setRecentVisits] = useState<CrmVisit[]>([]);
   const [currentGps, setCurrentGps] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [selectedLeadForCheckIn, setSelectedLeadForCheckIn] = useState<string>('');
   const [visitNotes, setVisitNotes] = useState<string>('');
-  const [visitOutcome, setVisitOutcome] = useState<string>('Spoke with owner, interested');
+  const [visitOutcome, setVisitOutcome] = useState<string>('Met owner, interested');
 
-  // Load itinerary & visits
   useEffect(() => {
     if (currentProfile) {
       loadItinerary();
@@ -37,20 +35,14 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
     const items = await fetchUserItinerary(currentProfile.id);
     setItinerary(items);
 
-    // Extract all visits from leads
     const allVisits = leads
       .flatMap(l => l.visits || [])
       .sort((a, b) => new Date(b.visited_at).getTime() - new Date(a.visited_at).getTime());
     setRecentVisits(allVisits.slice(0, 15));
   };
 
-  // Get live GPS
   const handleAcquireGps = () => {
-    if (!navigator.geolocation) {
-      setGpsError("Geolocation is not supported by your browser");
-      return;
-    }
-
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCurrentGps({
@@ -58,12 +50,9 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
           lng: pos.coords.longitude,
           accuracy: Math.round(pos.coords.accuracy)
         });
-        setGpsError(null);
       },
-      (err) => {
-        setGpsError(err.message || "Failed to acquire GPS");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
+      () => {},
+      { enableHighAccuracy: true }
     );
   };
 
@@ -71,13 +60,9 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
     handleAcquireGps();
   }, []);
 
-  // Submit GPS Check-In
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLeadForCheckIn) {
-      alert("Please select which restaurant you visited");
-      return;
-    }
+    if (!selectedLeadForCheckIn) return;
 
     setIsCheckingIn(true);
     await logVisit({
@@ -99,7 +84,6 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
     loadItinerary();
   };
 
-  // Add a lead to today's route
   const handleAddStop = async (leadId: string) => {
     if (!currentProfile) return;
     await addToItinerary(leadId, currentProfile.id);
@@ -107,84 +91,68 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
   };
 
   return (
-    <div className="h-[calc(100vh-65px)] overflow-y-auto p-4 md:p-6 bg-slate-950">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* GPS Banner */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center border border-orange-500/30">
-              <Compass className="w-5 h-5 animate-spin-slow" />
-            </div>
-            <div>
-              <h2 className="text-sm font-extrabold text-white">Live Field GPS Tracking</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {currentGps ? (
-                  <span className="text-emerald-400 font-mono flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Lat {currentGps.lat.toFixed(5)}, Lng {currentGps.lng.toFixed(5)} (±{currentGps.accuracy}m accuracy)
-                  </span>
-                ) : (
-                  <span className="text-amber-400">Acquiring live location...</span>
-                )}
-              </p>
-            </div>
+    <div className="h-[calc(100vh-105px)] overflow-y-auto p-8 bg-white select-none text-[#37352F]">
+      <div className="max-w-4xl mx-auto space-y-6">
+
+        {/* Notion Page Header */}
+        <div>
+          <div className="text-3xl mb-2">📍</div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#37352F]">
+            Daily Route & Field GPS
+          </h1>
+          <p className="text-xs text-[#787774] mt-1">
+            Track planned visits for today and record verified physical check-ins on the road.
+          </p>
+        </div>
+
+        {/* GPS Status Banner */}
+        <div className="p-3 bg-[#F7F6F3] border border-[#EDEDEB] rounded-lg flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#0F7B54] animate-pulse"></span>
+            <span className="text-[#37352F] font-medium">
+              {currentGps 
+                ? `GPS Active: ${currentGps.lat.toFixed(5)}, ${currentGps.lng.toFixed(5)} (±${currentGps.accuracy}m)` 
+                : 'Acquiring GPS...'}
+            </span>
           </div>
 
           <button
             onClick={handleAcquireGps}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition-all"
+            className="text-[11px] font-semibold text-[#1879B5] hover:underline"
           >
-            <Navigation className="w-3.5 h-3.5 text-sky-400" />
-            Refresh GPS
+            Refresh Coordinates
           </button>
         </div>
 
-        {/* 2 Column Layout: "Where He Has to Go" & "Where Person Went" */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 2 Column Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* LEFT: Where to Go (Itinerary) */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-orange-400" />
-                <h3 className="text-sm font-extrabold text-white">Where He Has to Go (Today's Route)</h3>
-              </div>
-              <span className="text-xs font-bold text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full">
-                {itinerary.length} Stops
-              </span>
+          {/* Planned Stops */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-[#EDEDEB] pb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#787774]">
+                Where He Has to Go (Today's Route)
+              </h2>
+              <span className="text-xs font-mono text-[#9B9A97]">{itinerary.length} stops</span>
             </div>
 
-            {/* Quick Add Stop Selector */}
-            <div className="mb-4">
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                Add Restaurant to Today's Route:
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) handleAddStop(e.target.value);
-                  }}
-                  className="flex-1 bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-xl px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                >
-                  <option value="">Choose restaurant in Enschede...</option>
-                  {leads.slice(0, 50).map(l => (
-                    <option key={l.id} value={l.id}>
-                      {l.name} — {l.address} ({l.stage})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex gap-2">
+              <select
+                value=""
+                onChange={(e) => { if (e.target.value) handleAddStop(e.target.value); }}
+                className="w-full bg-[#F7F6F3] text-xs text-[#37352F] border border-[#EDEDEB] rounded-md px-3 py-1.5 focus:outline-none"
+              >
+                <option value="">+ Add stop to route...</option>
+                {leads.slice(0, 50).map(l => (
+                  <option key={l.id} value={l.id}>{l.name} ({l.address})</option>
+                ))}
+              </select>
             </div>
 
-            {/* Itinerary List */}
-            <div className="space-y-3 flex-1 overflow-y-auto max-h-[450px] pr-1">
+            <div className="space-y-2">
               {itinerary.length === 0 ? (
-                <div className="h-44 border border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center p-4 text-center">
-                  <MapPin className="w-8 h-8 text-slate-700 mb-2" />
-                  <p className="text-xs text-slate-400 font-semibold">No planned visits on your route yet.</p>
-                  <p className="text-[11px] text-slate-500 mt-1">Select restaurants from the map or dropdown above to plan today's field route.</p>
+                <div className="p-6 text-center text-[#9B9A97] text-xs bg-[#F7F6F3] rounded-lg">
+                  No stops added to today's route yet.
                 </div>
               ) : (
                 itinerary.map((item, idx) => {
@@ -195,33 +163,28 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
                     <div
                       key={item.id}
                       onClick={() => onSelectLead(lead)}
-                      className="p-3 bg-slate-850 border border-slate-700/80 rounded-xl hover:border-slate-600 cursor-pointer transition-all flex items-center justify-between gap-3"
+                      className="p-3 bg-white border border-[#EDEDEB] hover:border-[#D4D4D0] rounded-lg cursor-pointer transition-all flex items-center justify-between gap-2"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-5 h-5 rounded-full bg-[#E3E2E0] text-[#37352F] text-[10px] font-bold flex items-center justify-center shrink-0">
                           {idx + 1}
-                        </div>
+                        </span>
                         <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-white truncate">{lead.name}</h4>
-                          <p className="text-[11px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-                            {lead.address}
-                          </p>
+                          <h4 className="text-xs font-semibold text-[#37352F] truncate">{lead.name}</h4>
+                          <p className="text-[11px] text-[#787774] truncate">{lead.address}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${lead.latitude},${lead.longitude}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-xs bg-slate-800 hover:bg-slate-700 text-sky-400 p-2 rounded-lg border border-slate-700"
-                          title="Navigate"
-                        >
-                          <Navigation className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${lead.latitude},${lead.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded text-[#1879B5] hover:bg-[#F7F6F3]"
+                        title="Directions"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   );
                 })
@@ -229,125 +192,86 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: Check-In Form & "Where Person Went" Log */}
-          <div className="space-y-6">
+          {/* Record Visit & Where Person Went Log */}
+          <div className="space-y-4">
+            
+            {/* Record Check-In */}
+            <div className="p-4 bg-[#F7F6F3] border border-[#EDEDEB] rounded-lg space-y-3">
+              <h3 className="text-xs font-bold text-[#37352F] uppercase tracking-wider">
+                Log GPS Physical Check-In
+              </h3>
 
-            {/* Check-In Action Card */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-extrabold text-white">Log Physical Visit / GPS Check-In</h3>
-              </div>
+              <form onSubmit={handleCheckIn} className="space-y-2.5">
+                <select
+                  value={selectedLeadForCheckIn}
+                  onChange={(e) => setSelectedLeadForCheckIn(e.target.value)}
+                  required
+                  className="w-full bg-white text-xs text-[#37352F] border border-[#EDEDEB] rounded-md px-2.5 py-1.5 focus:outline-none"
+                >
+                  <option value="">Select restaurant visited...</option>
+                  {leads.slice(0, 80).map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
 
-              <form onSubmit={handleCheckIn} className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Select Restaurant Visited:
-                  </label>
-                  <select
-                    value={selectedLeadForCheckIn}
-                    onChange={(e) => setSelectedLeadForCheckIn(e.target.value)}
-                    required
-                    className="w-full bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-xl px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                  >
-                    <option value="">Select restaurant...</option>
-                    {leads.slice(0, 100).map(l => (
-                      <option key={l.id} value={l.id}>{l.name} — {l.address}</option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={visitOutcome}
+                  onChange={(e) => setVisitOutcome(e.target.value)}
+                  className="w-full bg-white text-xs text-[#37352F] border border-[#EDEDEB] rounded-md px-2.5 py-1.5 focus:outline-none"
+                >
+                  <option value="Met owner - highly interested">Met owner - highly interested</option>
+                  <option value="Agreed on tasting date">Agreed on tasting date</option>
+                  <option value="Contract signed">Contract signed</option>
+                  <option value="Delivered Sunmi POS">Delivered Sunmi POS</option>
+                  <option value="Left flyer / card with staff">Left flyer with staff</option>
+                </select>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Outcome / Status:
-                    </label>
-                    <select
-                      value={visitOutcome}
-                      onChange={(e) => setVisitOutcome(e.target.value)}
-                      className="w-full bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-xl px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                    >
-                      <option value="Met owner - highly interested">Met owner - highly interested</option>
-                      <option value="Left flyer / card with staff">Left flyer / card with staff</option>
-                      <option value="Agreed on tasting date">Agreed on tasting date</option>
-                      <option value="Signed contract">Signed contract</option>
-                      <option value="Delivered Sunmi POS">Delivered Sunmi POS</option>
-                      <option value="Owner not present, call back">Owner not present, call back</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Quick Notes:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Owner name is John, prefers WhatsApp"
-                      value={visitNotes}
-                      onChange={(e) => setVisitNotes(e.target.value)}
-                      className="w-full bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-xl px-3 py-2 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
+                <input
+                  type="text"
+                  placeholder="Visit notes (e.g. manager Marco requested 12%)..."
+                  value={visitNotes}
+                  onChange={(e) => setVisitNotes(e.target.value)}
+                  className="w-full bg-white text-xs text-[#37352F] border border-[#EDEDEB] rounded-md px-2.5 py-1.5 focus:outline-none"
+                />
 
                 <button
                   type="submit"
                   disabled={isCheckingIn}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-[#37352F] hover:bg-[#201F1D] text-white font-medium text-xs py-1.5 px-3 rounded transition-colors"
                 >
-                  <Navigation className="w-4 h-4" />
-                  {isCheckingIn ? 'Recording GPS Check-In...' : 'Record Visit with GPS Coordinates'}
+                  {isCheckingIn ? 'Recording...' : 'Record Visit with GPS'}
                 </button>
               </form>
             </div>
 
             {/* Timeline: Where Person Went */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-sky-400" />
-                  <h3 className="text-sm font-extrabold text-white">Where Person Went (Visit Log Timeline)</h3>
-                </div>
-                <span className="text-xs text-slate-400 font-medium">Recent Check-ins</span>
-              </div>
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-[#787774] uppercase tracking-wider">
+                Where Person Went (Timeline)
+              </h3>
 
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                {recentVisits.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-6">No check-ins recorded yet.</p>
-                ) : (
-                  recentVisits.map((visit) => {
-                    const lead = leads.find(l => l.id === visit.lead_id);
-                    return (
-                      <div
-                        key={visit.id}
-                        className="p-3 bg-slate-850 border border-slate-800 rounded-xl text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-white">{lead?.name || 'Restaurant'}</span>
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(visit.visited_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-emerald-400 font-semibold">{visit.outcome}</p>
-                        {visit.notes && <p className="text-slate-300 italic">{visit.notes}</p>}
-                        <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                          <span>By: {visit.visitor_name}</span>
-                          {visit.gps_lat && (
-                            <span>GPS: {visit.gps_lat.toFixed(4)}, {visit.gps_lng?.toFixed(4)}</span>
-                          )}
-                        </div>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {recentVisits.map((v) => {
+                  const lead = leads.find(l => l.id === v.lead_id);
+                  return (
+                    <div key={v.id} className="p-2.5 bg-[#F7F6F3] rounded text-xs space-y-0.5">
+                      <div className="flex items-center justify-between text-[#787774] text-[11px]">
+                        <span className="font-semibold text-[#37352F]">{lead?.name || 'Restaurant'}</span>
+                        <span>{new Date(v.visited_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                    );
-                  })
-                )}
+                      <p className="text-[#0F7B54] font-medium">{v.outcome}</p>
+                      {v.notes && <p className="text-[#5A5852]">{v.notes}</p>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
           </div>
+
         </div>
 
       </div>
     </div>
   );
 };
-

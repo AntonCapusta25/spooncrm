@@ -4,62 +4,58 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply bg-white text-[#37352F] antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Custom Sleek Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
+/* Notion Sleek Scrollbar */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(55, 53, 47, 0.15);
   border-radius: 9999px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.6);
-  border-radius: 9999px;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 53, 47, 0.3);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.9);
-}
-
-/* Mapbox overrides */
+/* Mapbox Popup Overrides for Notion feel */
 .mapboxgl-popup-content {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155 !important;
-  border-radius: 1rem !important;
-  padding: 1rem !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  background: #ffffff !important;
+  color: #37352f !important;
+  border: 1px solid #ededeb !important;
+  border-radius: 10px !important;
+  padding: 0.85rem !important;
+  box-shadow: 0 12px 24px -4px rgba(15, 15, 15, 0.08), 0 0 0 1px rgba(15, 15, 15, 0.05) !important;
+  font-family: 'Inter', sans-serif !important;
 }
 
 .mapboxgl-popup-tip {
-  border-top-color: #0f172a !important;
-  border-bottom-color: #0f172a !important;
+  border-top-color: #ffffff !important;
+  border-bottom-color: #ffffff !important;
 }
 
 .mapboxgl-ctrl-group {
-  background: #0f172a !important;
-  border: 1px solid #334155 !important;
-  border-radius: 0.75rem !important;
+  background: #ffffff !important;
+  border: 1px solid #ededeb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
   overflow: hidden;
 }
 
 .mapboxgl-ctrl-group button {
-  border-bottom: 1px solid #1e293b !important;
+  border-bottom: 1px solid #ededeb !important;
 }
 
 .mapboxgl-ctrl-group button:hover {
-  background-color: #1e293b !important;
+  background-color: #f7f6f3 !important;
 }
-
-.mapboxgl-ctrl-icon {
-  filter: invert(1);
-}
-
