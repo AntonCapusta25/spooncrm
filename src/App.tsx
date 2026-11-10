@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CrmLead, CrmProfile } from './types/crm';
 import { fetchLeads, fetchProfiles, supabase } from './lib/supabase';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
+import { FilterBar, FilterState } from './components/FilterBar';
 import { MapView } from './components/MapView';
 import { PipelineView } from './components/PipelineView';
 import { TableView } from './components/TableView';
@@ -17,11 +18,21 @@ export function App() {
   const [profiles, setProfiles] = useState<CrmProfile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<CrmProfile | null>(null);
   const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue'>('map');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Notion Filter State
+  const [filters, setFilters] = useState<FilterState>({
+    stage: 'all',
+    cuisine: 'all',
+    assigneeId: 'all',
+    minRating: 0,
+    hasPhone: false,
+    hasProof: false,
+    district: 'all',
+    search: ''
+  });
 
   useEffect(() => {
     loadData();
@@ -75,18 +86,61 @@ export function App() {
     setSelectedLead(prev => prev ? data.find(l => l.id === prev.id) || null : null);
   };
 
-  // Filter leads based on search query and district
-  const filteredLeads = leads.filter(l => {
-    if (selectedDistrict !== 'all' && !l.address.includes(selectedDistrict)) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      l.name.toLowerCase().includes(q) ||
-      (l.cuisine && l.cuisine.toLowerCase().includes(q)) ||
-      l.address.toLowerCase().includes(q) ||
-      (l.phone && l.phone.includes(q))
-    );
-  });
+  // Extract unique cuisines
+  const cuisines = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach(l => {
+      if (l.cuisine) {
+        l.cuisine.split(',').forEach(c => {
+          const trimmed = c.trim();
+          if (trimmed.length > 2 && trimmed.length < 25) set.add(trimmed);
+        });
+      }
+    });
+    return Array.from(set).slice(0, 30);
+  }, [leads]);
+
+  // Master Filter Engine (Applied across Map, Board, Table, and Dispatch)
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => {
+      // 1. Stage
+      if (filters.stage !== 'all' && l.stage !== filters.stage) return false;
+
+      // 2. Cuisine
+      if (filters.cuisine !== 'all' && (!l.cuisine || !l.cuisine.toLowerCase().includes(filters.cuisine.toLowerCase()))) return false;
+
+      // 3. Assignee
+      if (filters.assigneeId === 'unassigned') {
+        if (l.assignees && l.assignees.length > 0) return false;
+      } else if (filters.assigneeId !== 'all') {
+        if (!l.assignees?.some(a => a.id === filters.assigneeId)) return false;
+      }
+
+      // 4. Rating
+      if (filters.minRating > 0 && (l.rating || 0) < filters.minRating) return false;
+
+      // 5. Phone toggle
+      if (filters.hasPhone && !l.phone) return false;
+
+      // 6. POS Proof toggle
+      if (filters.hasProof && (!l.proofs || l.proofs.length === 0)) return false;
+
+      // 7. District
+      if (filters.district !== 'all' && !l.address.includes(filters.district)) return false;
+
+      // 8. Search query
+      if (filters.search.trim()) {
+        const q = filters.search.toLowerCase();
+        const matchesName = l.name.toLowerCase().includes(q);
+        const matchesAddr = l.address.toLowerCase().includes(q);
+        const matchesCuisine = l.cuisine && l.cuisine.toLowerCase().includes(q);
+        const matchesPhone = l.phone && l.phone.includes(q);
+        if (!matchesName && !matchesAddr && !matchesCuisine && !matchesPhone) return false;
+      }
+
+      return true;
+    });
+  }, [leads, filters]);
 
   const posHandoverCount = leads.filter(l => l.stage === 'pos_handover').length;
 
@@ -102,9 +156,9 @@ export function App() {
         onProfileChange={setCurrentProfile}
         posQueueCount={posHandoverCount}
         totalLeadsCount={leads.length}
-        selectedDistrict={selectedDistrict}
+        selectedDistrict={filters.district}
         onDistrictSelect={(d) => {
-          setSelectedDistrict(d);
+          setFilters(prev => ({ ...prev, district: d }));
           setCurrentTab('map');
         }}
       />
@@ -112,17 +166,27 @@ export function App() {
       {/* Main Workspace Canvas */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
         
-        {/* Top Navbar & View Switcher */}
+        {/* Top Navbar & View Tabs */}
         <Navbar
           currentTab={currentTab}
           onTabChange={setCurrentTab}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          searchQuery={filters.search}
+          onSearchChange={(q) => setFilters(prev => ({ ...prev, search: q }))}
           posQueueCount={posHandoverCount}
-          totalLeadsCount={filteredLeads.length}
+          totalLeadsCount={leads.length}
           onNewLeadClick={() => {
-            alert("New prospect modal: You can click any restaurant on the map or in the table to edit properties.");
+            alert("To add a new lead, drop a pin on the map or click + New at the bottom of any Board column.");
           }}
+        />
+
+        {/* Global Notion Filter Bar */}
+        <FilterBar
+          filters={filters}
+          onFilterChange={setFilters}
+          profiles={profiles}
+          totalLeadsCount={leads.length}
+          filteredCount={filteredLeads.length}
+          cuisines={cuisines}
         />
 
         {/* Workspace Canvas Area */}
@@ -130,7 +194,7 @@ export function App() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#787774]">
               <Loader2 className="w-6 h-6 animate-spin text-[#FF5A1F]" />
-              <p className="text-xs font-medium">Loading Spoonful Workspace...</p>
+              <p className="text-xs font-medium">Loading Spoonful Workspace from Supabase...</p>
             </div>
           ) : (
             <>
@@ -140,7 +204,7 @@ export function App() {
                   onSelectLead={setSelectedLead}
                   onCheckInLead={(lead) => setSelectedLead(lead)}
                   onOpenProofModal={setProofModalLead}
-                  selectedDistrict={selectedDistrict}
+                  selectedDistrict={filters.district}
                 />
               )}
 

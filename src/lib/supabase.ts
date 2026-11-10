@@ -33,6 +33,7 @@ export async function fetchLeads(): Promise<CrmLead[]> {
       crm_pos_proofs (*),
       crm_visits (*)
     `)
+    .range(0, 999)
     .order('created_at', { ascending: false });
 
   if (error) {
