@@ -32,36 +32,10 @@ async function runSeed() {
   const profiles = await profileRes.json();
   const oleksandrId = profiles[0]?.id;
 
-  const stages = [
-    'discovered', 'discovered', 'discovered', 'discovered',
-    'contacted', 'contacted',
-    'meeting_scheduled',
-    'contract_signed',
-    'pos_handover'
-  ];
-
-  const leads = restaurants.map((r, idx) => {
+  const leads = restaurants.map((r) => {
     const lat = parseFloat(r.latitude);
     const lng = parseFloat(r.longitude);
     if (isNaN(lat) || isNaN(lng)) return null;
-
-    let stage = 'discovered';
-    let notes = null;
-    if (idx === 0) {
-      stage = 'pos_handover';
-      notes = 'Sunmi V2s installation requested. Handed over to Oleksandr for counter delivery & photo proof.';
-    } else if (idx === 1) {
-      stage = 'pos_handover';
-      notes = 'Contract signed with owner. Ready for POS terminal dispatch.';
-    } else if (idx === 2) {
-      stage = 'contract_signed';
-      notes = 'Agreed on 12% takeaway commission. Scheduling POS delivery.';
-    } else if (idx === 3 || idx === 4) {
-      stage = 'meeting_scheduled';
-      notes = 'Meeting scheduled with manager for Friday 15:00.';
-    } else if (idx < 25) {
-      stage = stages[idx % stages.length];
-    }
 
     return {
       name: (r.name || 'Unnamed Restaurant').trim(),
@@ -77,10 +51,10 @@ async function runSeed() {
       latitude: lat,
       longitude: lng,
       maps_url: r.url || null,
-      stage: stage,
+      stage: 'discovered',
       status: 'active',
-      priority: idx < 10 ? 'high' : 'medium',
-      notes: notes
+      priority: 'medium',
+      notes: null
     };
   }).filter(Boolean);
 
@@ -106,24 +80,6 @@ async function runSeed() {
     } else {
       const inserted = await res.json();
       console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} (${inserted.length} leads) inserted successfully.`);
-
-      // Assign Oleksandr to the first 2 pos_handover leads
-      if (i === 0 && oleksandrId && inserted.length > 0) {
-        await fetch(`${SUPABASE_URL}/rest/v1/crm_lead_assignees`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: SERVICE_KEY,
-            Authorization: `Bearer ${SERVICE_KEY}`,
-            Prefer: 'resolution=ignore-duplicates'
-          },
-          body: JSON.stringify([
-            { lead_id: inserted[0].id, profile_id: oleksandrId },
-            { lead_id: inserted[1].id, profile_id: oleksandrId }
-          ])
-        });
-        console.log("Assigned Oleksandr to the first 2 POS handover leads!");
-      }
     }
   }
 
