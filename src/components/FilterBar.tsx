@@ -64,10 +64,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   return (
-    <div className="bg-[#FFFFFF] border-b border-[#EDEDEB] px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs select-none">
+    <div className="bg-[#FFFFFF] border-b border-[#EDEDEB] px-3 md:px-6 py-1.5 md:py-2 flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap text-xs select-none">
       
       {/* Left Filter Controls */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         
         {/* Stage Filter */}
         <div className="flex items-center bg-[#F7F6F3] rounded border border-[#EDEDEB] px-2 py-1">

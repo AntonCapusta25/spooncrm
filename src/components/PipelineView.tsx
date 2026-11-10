@@ -34,8 +34,8 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
   };
 
   return (
-    <div className="h-[calc(100vh-105px)] overflow-x-auto p-6 bg-white select-none">
-      <div className="flex gap-4 min-w-[1700px] h-full pb-4 items-start">
+    <div className="h-full overflow-x-auto p-3 md:p-6 pb-20 md:pb-6 bg-white select-none">
+      <div className="flex gap-3 md:gap-4 min-w-max h-full items-start snap-x snap-mandatory">
         {NOTION_COLUMNS.map((col) => {
           const columnLeads = leads.filter(l => l.stage === col.stage);
           const isOleksandrStage = col.stage === 'pos_handover';
@@ -43,7 +43,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
           return (
             <div
               key={col.stage}
-              className="w-72 shrink-0 flex flex-col max-h-full"
+              className="w-[85vw] sm:w-72 shrink-0 flex flex-col max-h-full snap-start"
             >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-3 px-1">

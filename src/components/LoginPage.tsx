@@ -38,7 +38,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col items-center justify-center p-4 bg-white text-[#37352F] select-none font-['Inter',sans-serif]">
+    <div className="min-h-[100dvh] w-screen flex flex-col items-center justify-center p-4 pt-safe pb-safe bg-white text-[#37352F] select-none font-['Inter',sans-serif]">
       <div className="w-full max-w-[340px] space-y-6">
         
         {/* Notion Logo & Title */}
@@ -70,12 +70,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </label>
             <input
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
               required
               autoFocus
               placeholder="name@spoonful.nl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#F7F6F3] text-xs text-[#37352F] border border-[#EDEDEB] rounded-lg px-3 py-2 focus:outline-none focus:border-[#37352F] placeholder-[#9B9A97] transition-all"
+              className="w-full bg-[#F7F6F3] text-base md:text-xs text-[#37352F] border border-[#EDEDEB] rounded-lg px-3 py-2.5 md:py-2 focus:outline-none focus:border-[#37352F] placeholder-[#9B9A97] transition-all"
             />
           </div>
 
@@ -89,7 +92,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#F7F6F3] text-xs text-[#37352F] border border-[#EDEDEB] rounded-lg px-3 py-2 focus:outline-none focus:border-[#37352F] placeholder-[#9B9A97] transition-all"
+              className="w-full bg-[#F7F6F3] text-base md:text-xs text-[#37352F] border border-[#EDEDEB] rounded-lg px-3 py-2.5 md:py-2 focus:outline-none focus:border-[#37352F] placeholder-[#9B9A97] transition-all"
             />
           </div>
 

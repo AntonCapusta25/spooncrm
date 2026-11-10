@@ -91,7 +91,7 @@ export const DailyRouteView: React.FC<DailyRouteViewProps> = ({
   };
 
   return (
-    <div className="h-[calc(100vh-105px)] overflow-y-auto p-8 bg-white select-none text-[#37352F]">
+    <div className="h-full overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-white select-none text-[#37352F]">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Notion Page Header */}

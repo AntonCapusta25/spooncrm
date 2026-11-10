@@ -41,7 +41,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const [selectedStage, setSelectedStage] = useState<string>('all');
   const [selectedCuisine, setSelectedCuisine] = useState<string>('all');
   const [showDistricts, setShowDistricts] = useState<boolean>(true);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [activePopupLead, setActivePopupLead] = useState<CrmLead | null>(null);
 
   // Filtered Leads
@@ -298,6 +298,10 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const handleFlyToLead = (lead: CrmLead) => {
     setActivePopupLead(lead);
+    // On mobile, minimize list to reveal pin on map
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [lead.longitude, lead.latitude],
@@ -308,11 +312,11 @@ export const MapView: React.FC<MapViewProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-105px)] flex overflow-hidden bg-white text-[#37352F]">
+    <div className="relative w-full h-full flex overflow-hidden bg-white text-[#37352F]">
 
-      {/* LEFT PANE: Notion-style Lead Stream Sidebar */}
+      {/* LEFT PANE: Notion-style Lead Stream (Desktop side panel, Mobile bottom/slide drawer) */}
       <div 
-        className={`w-full md:w-[380px] shrink-0 h-full bg-[#FFFFFF] border-r border-[#EDEDEB] flex flex-col z-20 transition-all ${
+        className={`fixed md:relative inset-y-0 left-0 z-30 w-full md:w-[380px] shrink-0 h-full bg-[#FFFFFF] border-r border-[#EDEDEB] flex flex-col transition-all duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 pointer-events-none'
         }`}
       >
@@ -490,7 +494,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
         {/* Active Restaurant Floating Mini Page Popup */}
         {activePopupLead && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-11/12 max-w-sm bg-white border border-[#EDEDEB] rounded-xl p-4 shadow-xl text-[#37352F]">
+          <div className="absolute bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-30 w-11/12 max-w-sm bg-white border border-[#EDEDEB] rounded-xl p-4 shadow-xl text-[#37352F]">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">

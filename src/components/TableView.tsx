@@ -44,8 +44,8 @@ export const TableView: React.FC<TableViewProps> = ({
   });
 
   return (
-    <div className="h-[calc(100vh-105px)] overflow-auto bg-white text-[#37352F] text-[13px]">
-      <table className="w-full border-collapse text-left">
+    <div className="h-full overflow-auto bg-white text-[#37352F] text-[13px] pb-20 md:pb-0">
+      <table className="w-full border-collapse text-left min-w-[700px]">
         {/* Table Header */}
         <thead className="bg-[#F7F6F3] sticky top-0 z-10 border-b border-[#EDEDEB] text-[#787774] text-xs font-normal">
           <tr>

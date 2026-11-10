@@ -107,21 +107,27 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-xs animate-in fade-in duration-150 select-none">
-      <div className="w-full max-w-2xl h-full bg-white border-l border-[#EDEDEB] shadow-2xl flex flex-col overflow-hidden text-[#37352F]">
+    <div className="fixed inset-0 z-50 flex items-end md:items-stretch justify-center md:justify-end bg-black/40 backdrop-blur-xs animate-in fade-in duration-150 select-none">
+      <div className="w-full max-w-2xl h-[92dvh] md:h-full bg-white rounded-t-2xl md:rounded-none border-t md:border-t-0 md:border-l border-[#EDEDEB] shadow-2xl flex flex-col overflow-hidden text-[#37352F] pb-safe">
         
+        {/* Mobile Drag Indicator */}
+        <div className="pt-2 pb-1 md:hidden flex justify-center">
+          <div className="w-10 h-1 bg-[#D4D4D0] rounded-full" />
+        </div>
+
         {/* Top Minimal Action Bar */}
-        <div className="p-3 border-b border-[#EDEDEB] flex items-center justify-between text-xs text-[#787774]">
-          <div className="flex items-center gap-2">
+        <div className="px-4 md:px-6 py-2.5 border-b border-[#EDEDEB] flex items-center justify-between text-xs text-[#787774]">
+          <div className="flex items-center gap-2 min-w-0">
             <span>Spoonful</span>
             <span>/</span>
-            <span className="text-[#37352F] font-medium truncate max-w-[200px]">{lead.name}</span>
+            <span className="text-[#37352F] font-medium truncate max-w-[180px] md:max-w-[280px]">{lead.name}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
               className="p-1 rounded hover:bg-[#F7F6F3] text-[#787774] hover:text-[#37352F]"
+              aria-label="Close page"
             >
               <X className="w-4 h-4" />
             </button>
@@ -129,7 +135,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
         </div>
 
         {/* Scrollable Page Document Body */}
-        <div className="flex-1 overflow-y-auto px-10 py-8 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-4 md:px-10 py-5 md:py-8 space-y-6 custom-scrollbar">
 
           {/* Notion Page Icon & Title */}
           <div>

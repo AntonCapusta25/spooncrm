@@ -57,8 +57,8 @@ export const PosProofModal: React.FC<PosProofModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs select-none">
-      <div className="bg-white border border-[#EDEDEB] rounded-xl w-full max-w-lg overflow-hidden shadow-2xl text-[#37352F]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs select-none">
+      <div className="bg-white border-t sm:border border-[#EDEDEB] rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[92dvh] overflow-y-auto shadow-2xl text-[#37352F] pb-safe">
         
         {/* Header */}
         <div className="p-4 border-b border-[#EDEDEB] flex items-center justify-between">

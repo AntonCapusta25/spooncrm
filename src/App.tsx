@@ -12,6 +12,7 @@ import { PosQueueView } from './components/PosQueueView';
 import { LeadDetailModal } from './components/LeadDetailModal';
 import { PosProofModal } from './components/PosProofModal';
 import { LoginPage } from './components/LoginPage';
+import { MobileTabBar } from './components/MobileTabBar';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
@@ -23,6 +24,7 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue'>('map');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Notion Filter State
@@ -197,9 +199,9 @@ export function App() {
 
   // 3. Authenticated: Render Notion Workspace
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-white text-[#37352F] font-['Inter',sans-serif]">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-white text-[#37352F] font-['Inter',sans-serif]">
       
-      {/* Notion Collapsible Sidebar */}
+      {/* Notion Collapsible Sidebar (Drawer on Mobile, Panel on Desktop) */}
       <Sidebar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
@@ -212,6 +214,8 @@ export function App() {
           setCurrentTab('map');
         }}
         onLogout={handleLogout}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       {/* Main Workspace Canvas */}
@@ -228,6 +232,7 @@ export function App() {
           onNewLeadClick={() => {
             alert("To add a new lead, drop a pin on the map or click + New at the bottom of any Board column.");
           }}
+          onMenuClick={() => setMobileMenuOpen(true)}
         />
 
         {/* Global Notion Filter Bar */}
@@ -299,6 +304,13 @@ export function App() {
             </>
           )}
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <MobileTabBar
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+          posQueueCount={posHandoverCount}
+        />
 
       </div>
 
