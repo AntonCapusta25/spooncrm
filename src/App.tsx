@@ -11,6 +11,7 @@ import { DailyRouteView } from './components/DailyRouteView';
 import { PosQueueView } from './components/PosQueueView';
 import { LeadDetailModal } from './components/LeadDetailModal';
 import { PosProofModal } from './components/PosProofModal';
+import { AuthModal } from './components/AuthModal';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue'>('map');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Notion Filter State
@@ -161,6 +163,7 @@ export function App() {
           setFilters(prev => ({ ...prev, district: d }));
           setCurrentTab('map');
         }}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Workspace Canvas */}
@@ -275,6 +278,15 @@ export function App() {
           currentProfile={currentProfile}
         />
       )}
+
+      {/* Supabase Team Auth & Role Switcher Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        profiles={profiles}
+        currentProfile={currentProfile}
+        onSelectProfile={setCurrentProfile}
+      />
 
     </div>
   );

@@ -16,6 +16,7 @@ interface SidebarProps {
   totalLeadsCount: number;
   selectedDistrict: string;
   onDistrictSelect: (district: string) => void;
+  onOpenAuth: () => void;
 }
 
 const DISTRICTS = [
@@ -38,7 +39,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   posQueueCount,
   totalLeadsCount,
   selectedDistrict,
-  onDistrictSelect
+  onDistrictSelect,
+  onOpenAuth
 }) => {
   return (
     <aside className="w-64 h-screen bg-[#F7F6F3] border-r border-[#EDEDEB] flex flex-col justify-between shrink-0 select-none text-[#37352F] text-[13px]">
@@ -211,13 +213,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom Profile Bar */}
       <div className="p-3 border-t border-[#EDEDEB] bg-[#F7F6F3]">
-        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[#EFEFED] transition-colors cursor-pointer">
+        <div 
+          onClick={onOpenAuth}
+          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[#EFEFED] transition-colors cursor-pointer group"
+          title="Click to switch account or sign in"
+        >
           <div className="w-6 h-6 rounded-full bg-[#E3E2E0] flex items-center justify-center font-bold text-xs text-[#37352F]">
             {currentProfile?.name.charAt(0) || 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold text-[#37352F] truncate">
-              {currentProfile?.name || 'Spoonful Team'}
+            <div className="text-xs font-semibold text-[#37352F] truncate flex items-center justify-between">
+              <span>{currentProfile?.name || 'Spoonful Team'}</span>
+              <span className="text-[10px] text-[#787774] group-hover:text-[#37352F] group-hover:underline">Auth ▾</span>
             </div>
             <div className="text-[10px] text-[#787774] capitalize">
               {currentProfile?.role === 'pos_installer' ? 'POS Specialist' : currentProfile?.role}
