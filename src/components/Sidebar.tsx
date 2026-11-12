@@ -1,19 +1,21 @@
 import React from 'react';
 import { 
   Map, Kanban, Table2, Wrench, Navigation, 
-  Flame, X
+  Flame, X, Inbox, Sparkles, ExternalLink
 } from 'lucide-react';
 import { CrmProfile } from '../types/crm';
 
 interface SidebarProps {
-  currentTab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue';
-  onTabChange: (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue') => void;
+  currentTab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications';
+  onTabChange: (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications') => void;
   currentProfile: CrmProfile | null;
   posQueueCount: number;
+  applicationsCount?: number;
   totalLeadsCount: number;
   selectedDistrict: string;
   onDistrictSelect: (district: string) => void;
   onLogout: () => void;
+  onOpenOnboardingFlow?: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -34,14 +36,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   currentProfile,
   posQueueCount,
+  applicationsCount = 0,
   totalLeadsCount,
   selectedDistrict,
   onDistrictSelect,
   onLogout,
+  onOpenOnboardingFlow,
   mobileOpen = false,
   onMobileClose
 }) => {
-  const handleItemClick = (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue') => {
+  const handleItemClick = (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications') => {
     onTabChange(tab);
     onMobileClose?.();
   };
@@ -124,9 +128,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Database Views Navigation */}
           <div className="space-y-0.5">
-            <div className="px-2 py-1 text-[11px] font-medium text-[#787774] tracking-wider uppercase">
-              Views
+            <div className="px-2 py-1 text-[11px] font-medium text-[#787774] tracking-wider uppercase flex items-center justify-between">
+              <span>Views</span>
             </div>
+
+            <button
+              onClick={() => handleItemClick('applications')}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md transition-colors ${
+                currentTab === 'applications'
+                  ? 'bg-[#EFEFED] font-semibold text-[#37352F]'
+                  : 'text-[#5A5852] hover:bg-[#EFEFED]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Inbox className="w-4 h-4 text-[#FF5A1F]" />
+                <span className="font-medium">Applications</span>
+              </div>
+              {applicationsCount > 0 ? (
+                <span className="bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                  {applicationsCount}
+                </span>
+              ) : (
+                <span className="text-[10px] text-[#9B9A97]">0</span>
+              )}
+            </button>
 
             <button
               onClick={() => handleItemClick('map')}
@@ -228,6 +253,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Onboarding Flow Launcher Card */}
+          {onOpenOnboardingFlow && (
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  onOpenOnboardingFlow();
+                  onMobileClose?.();
+                }}
+                className="w-full p-2.5 rounded-xl bg-gradient-to-tr from-[#FFF1EB] to-[#FFF8F5] border border-[#FED7AA] hover:border-[#FF5A1F] text-left transition-all group cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#C2410C] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                    Typeform Flow
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-[#FF5A1F] opacity-70 group-hover:opacity-100" />
+                </div>
+                <p className="text-[11px] text-[#787774] mt-1 leading-snug">
+                  Open public restaurant onboarding flow
+                </p>
+              </button>
+            </div>
+          )}
 
         </div>
 

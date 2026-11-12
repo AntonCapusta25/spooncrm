@@ -205,3 +205,148 @@ export async function addToItinerary(leadId: string, profileId: string): Promise
   return !error;
 }
 
+// Search scraped leads for interactive matching in onboarding flow
+export async function searchLeadsForMatching(query: string): Promise<CrmLead[]> {
+  const cleaned = query.trim();
+  if (!cleaned || cleaned.length < 2) return [];
+
+  // Query by name ILIKE
+  const { data, error } = await supabase
+    .from('crm_leads')
+    .select('*')
+    .ilike('name', `%${cleaned}%`)
+    .limit(8);
+
+  if (error) {
+    console.error('Error searching leads for matching:', error);
+    return [];
+  }
+  return data || [];
+}
+
+// Submit Onboarding Application: match scraped lead or add new write + map point
+export async function submitOnboardingApplication(
+  payload: import('../types/crm').OnboardingApplicationData
+): Promise<{ success: boolean; lead: CrmLead | null; isNewLead: boolean; message: string }> {
+  try {
+    const now = new Date().toISOString();
+    const appNote = `[INBOUND_APPLICATION] Date: ${now} | Applicant: ${payload.contactPerson} (${payload.role || 'Partner'}) | Phone: ${payload.phone} | Email: ${payload.email} | Thuisbezorgd: ${payload.thuisbezorgdUrl || 'N/A'} | Preference: ${payload.preferredContact || 'call'}`;
+
+    let matchedLead: CrmLead | null = null;
+
+    // 1. If explicit matched ID provided
+    if (payload.matchedLeadId) {
+      const { data } = await supabase
+        .from('crm_leads')
+        .select('*')
+        .eq('id', payload.matchedLeadId)
+        .maybeSingle();
+      if (data) {
+        matchedLead = data;
+      }
+    }
+
+    // 2. Otherwise try to match by exact or fuzzy name
+    if (!matchedLead && payload.restaurantName) {
+      const cleanName = payload.restaurantName.trim();
+      const { data } = await supabase
+        .from('crm_leads')
+        .select('*')
+        .ilike('name', `%${cleanName}%`)
+        .limit(1);
+      if (data && data.length > 0) {
+        matchedLead = data[0];
+      }
+    }
+
+    // CASE A: Matched scraped lead -> update lead with application info & advance stage
+    if (matchedLead) {
+      const existingNotes = matchedLead.notes ? `${appNote}\n---\n${matchedLead.notes}` : appNote;
+      const newStage: LeadStage = matchedLead.stage === 'discovered' ? 'contacted' : matchedLead.stage;
+
+      const { data: updated, error } = await supabase
+        .from('crm_leads')
+        .update({
+          contact_person: payload.contactPerson.trim(),
+          phone: payload.phone.trim(),
+          email: payload.email.trim(),
+          website: payload.thuisbezorgdUrl?.trim() || matchedLead.website,
+          stage: newStage,
+          priority: 'urgent',
+          status: 'active',
+          notes: existingNotes,
+          updated_at: now
+        })
+        .eq('id', matchedLead.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to update matched lead application:', error);
+        return { success: false, lead: null, isNewLead: false, message: error.message };
+      }
+
+      return {
+        success: true,
+        lead: updated,
+        isNewLead: false,
+        message: `Application linked to existing scraped lead: ${updated.name}`
+      };
+    }
+
+    // CASE B: No scraped lead match -> add new write & new point on map!
+    const baseLat = 52.221536;
+    const baseLng = 6.893662;
+    // Jitter coordinates within Enschede central zone so marker sits nicely on the map
+    const jitterLat = baseLat + (Math.random() - 0.5) * 0.018;
+    const jitterLng = baseLng + (Math.random() - 0.5) * 0.018;
+
+    const newLeadRecord = {
+      name: payload.restaurantName.trim(),
+      contact_person: payload.contactPerson.trim(),
+      phone: payload.phone.trim(),
+      email: payload.email.trim(),
+      website: payload.thuisbezorgdUrl?.trim() || null,
+      cuisine: 'Restaurant',
+      rating: 5.0,
+      reviews_count: 1,
+      price_level: '€€',
+      address: payload.address || 'Enschede, Netherlands',
+      postal_code: '7511 AA',
+      city: payload.city || 'Enschede',
+      latitude: jitterLat,
+      longitude: jitterLng,
+      stage: 'contacted' as LeadStage,
+      status: 'active' as const,
+      priority: 'urgent' as const,
+      commission_rate: 12,
+      notes: appNote,
+      created_at: now,
+      updated_at: now
+    };
+
+    const { data: created, error: insertError } = await supabase
+      .from('crm_leads')
+      .insert(newLeadRecord)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Failed to create new lead application:', insertError);
+      return { success: false, lead: null, isNewLead: true, message: insertError.message };
+    }
+
+    return {
+      success: true,
+      lead: created,
+      isNewLead: true,
+      message: `New restaurant lead created and placed on Enschede map: ${created.name}`
+    };
+
+  } catch (err: any) {
+    console.error('Error submitting application:', err);
+    return { success: false, lead: null, isNewLead: false, message: err.message || 'Unknown error' };
+  }
+}
+
+

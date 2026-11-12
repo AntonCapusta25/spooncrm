@@ -1,18 +1,26 @@
 import React from 'react';
-import { Map, Kanban, Wrench, Table2, Navigation } from 'lucide-react';
+import { Map, Kanban, Wrench, Table2, Navigation, Inbox } from 'lucide-react';
 
 interface MobileTabBarProps {
-  currentTab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue';
-  onTabChange: (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue') => void;
+  currentTab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications';
+  onTabChange: (tab: 'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications') => void;
   posQueueCount: number;
+  applicationsCount?: number;
 }
 
 export const MobileTabBar: React.FC<MobileTabBarProps> = ({
   currentTab,
   onTabChange,
   posQueueCount,
+  applicationsCount = 0,
 }) => {
   const tabs = [
+    { 
+      id: 'applications' as const, 
+      label: 'Inbox', 
+      icon: Inbox,
+      badge: applicationsCount > 0 ? applicationsCount : null
+    },
     { id: 'map' as const, label: 'Radar', icon: Map },
     { id: 'pipeline' as const, label: 'Board', icon: Kanban },
     { 
@@ -64,3 +72,4 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({
     </nav>
   );
 };
+

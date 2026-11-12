@@ -4,9 +4,10 @@ import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
+  onOpenOnboardingFlow?: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenOnboardingFlow }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +112,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             )}
           </button>
         </form>
+
+        {onOpenOnboardingFlow && (
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={onOpenOnboardingFlow}
+              className="text-xs text-[#FF5A1F] hover:text-[#E04B14] font-semibold hover:underline flex items-center justify-center gap-1 mx-auto"
+            >
+              <span>Restaurant Partner? Apply to join Spoonful →</span>
+            </button>
+          </div>
+        )}
 
         <div className="pt-4 border-t border-[#EDEDEB] text-center text-[11px] text-[#9B9A97]">
           Internal tool • Spoonful B.V.

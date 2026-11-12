@@ -86,3 +86,46 @@ export interface CrmPosProof {
   installed_at: string;
 }
 
+export interface OnboardingApplicationData {
+  restaurantName: string;
+  thuisbezorgdUrl?: string;
+  contactPerson: string;
+  role?: string;
+  phone: string;
+  email: string;
+  preferredContact?: 'call' | 'whatsapp' | 'email';
+  matchedLeadId?: string;
+  address?: string;
+  city?: string;
+  notes?: string;
+}
+
+export function isLeadApplication(lead: CrmLead): boolean {
+  return Boolean(
+    (lead.notes && lead.notes.includes('[INBOUND_APPLICATION]')) ||
+    (lead.contact_person && (lead.notes?.toLowerCase().includes('application') || lead.notes?.toLowerCase().includes('thuisbezorgd')))
+  );
+}
+
+export function parseApplicationDetails(lead: CrmLead) {
+  if (!isLeadApplication(lead) || !lead.notes) return null;
+  
+  const text = lead.notes;
+  const applicantMatch = text.match(/Applicant:\s*([^|\n]+)/i);
+  const phoneMatch = text.match(/Phone:\s*([^|\n]+)/i);
+  const emailMatch = text.match(/Email:\s*([^|\n]+)/i);
+  const thuisbezorgdMatch = text.match(/Thuisbezorgd:\s*([^|\n]+)/i);
+  const dateMatch = text.match(/Date:\s*([^|\n]+)/i);
+  const contactPrefMatch = text.match(/Preference:\s*([^|\n]+)/i);
+
+  return {
+    applicantName: applicantMatch ? applicantMatch[1].trim() : lead.contact_person || 'Partner',
+    phone: phoneMatch ? phoneMatch[1].trim() : lead.phone || '',
+    email: emailMatch ? emailMatch[1].trim() : lead.email || '',
+    thuisbezorgdUrl: thuisbezorgdMatch && thuisbezorgdMatch[1].trim() !== 'N/A' ? thuisbezorgdMatch[1].trim() : lead.website || '',
+    date: dateMatch ? dateMatch[1].trim() : lead.updated_at,
+    contactPreference: contactPrefMatch ? contactPrefMatch[1].trim() : 'call'
+  };
+}
+
+

@@ -73,6 +73,13 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                       }`}
                     >
                       {/* Name with Notion Page Icon */}
+                      {lead.notes?.includes('[INBOUND_APPLICATION]') && (
+                        <div className="mb-1">
+                          <span className="bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/30 text-[9px] font-bold px-1.5 py-0.2 rounded-full inline-flex items-center gap-1">
+                            🎯 Application
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-start justify-between gap-1 mb-1">
                         <h4 className="text-xs font-semibold text-[#37352F] group-hover:text-[#1879B5] transition-colors leading-snug line-clamp-1">
                           {lead.name}

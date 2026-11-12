@@ -97,7 +97,14 @@ export const TableView: React.FC<TableViewProps> = ({
                 {/* Name */}
                 <td className="py-2 px-4 border-r border-[#EDEDEB] font-medium text-[#37352F]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">{lead.name}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{lead.name}</span>
+                      {lead.notes?.includes('[INBOUND_APPLICATION]') && (
+                        <span className="bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/30 text-[9px] font-bold px-1.5 py-0.2 rounded-full shrink-0">
+                          🎯 Application
+                        </span>
+                      )}
+                    </div>
                     <span className="opacity-0 group-hover:opacity-100 text-[11px] text-[#787774] bg-[#EFEFED] px-1.5 py-0.5 rounded transition-opacity shrink-0">
                       OPEN
                     </span>

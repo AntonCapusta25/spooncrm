@@ -13,6 +13,7 @@ interface MapViewProps {
   onCheckInLead: (lead: CrmLead) => void;
   onOpenProofModal: (lead: CrmLead) => void;
   selectedDistrict: string;
+  focusLead?: CrmLead | null;
 }
 
 const STAGE_TAGS: Record<LeadStage, { label: string; bg: string; text: string; hex: string }> = {
@@ -31,7 +32,8 @@ export const MapView: React.FC<MapViewProps> = ({
   onSelectLead, 
   onCheckInLead,
   onOpenProofModal,
-  selectedDistrict
+  selectedDistrict,
+  focusLead
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -153,6 +155,18 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [filteredLeads]);
 
+  // Fly to focusLead if passed
+  useEffect(() => {
+    if (focusLead && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [focusLead.longitude, focusLead.latitude],
+        zoom: 16,
+        duration: 1200
+      });
+      setActivePopupLead(focusLead);
+    }
+  }, [focusLead]);
+
   const updateMapLeadsSource = (map: mapboxgl.Map, currentLeads: CrmLead[]) => {
     const geojsonData: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
@@ -168,7 +182,8 @@ export const MapView: React.FC<MapViewProps> = ({
           address: l.address,
           phone: l.phone || '',
           stage: l.stage,
-          is_handover: l.stage === 'pos_handover' ? 1 : 0
+          is_handover: l.stage === 'pos_handover' ? 1 : 0,
+          is_application: (l.notes && l.notes.includes('[INBOUND_APPLICATION]')) ? 1 : 0
         },
         geometry: {
           type: 'Point',
@@ -238,21 +253,33 @@ export const MapView: React.FC<MapViewProps> = ({
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': [
-            'match',
-            ['get', 'stage'],
-            'pos_handover', '#D44026',
-            'contract_signed', '#286E34',
-            'meeting_scheduled', '#8232B4',
-            'onboarded', '#0F7B54',
-            '#9B9A97'
+            'case',
+            ['==', ['get', 'is_application'], 1], '#FF5A1F', // Orange for Inbound Applications!
+            [
+              'match',
+              ['get', 'stage'],
+              'pos_handover', '#D44026',
+              'contract_signed', '#286E34',
+              'meeting_scheduled', '#8232B4',
+              'onboarded', '#0F7B54',
+              '#9B9A97'
+            ]
           ],
           'circle-radius': [
-            'match',
-            ['get', 'stage'],
-            'pos_handover', 8,
-            6
+            'case',
+            ['==', ['get', 'is_application'], 1], 9,
+            [
+              'match',
+              ['get', 'stage'],
+              'pos_handover', 8,
+              6
+            ]
           ],
-          'circle-stroke-width': 2,
+          'circle-stroke-width': [
+            'case',
+            ['==', ['get', 'is_application'], 1], 3,
+            2
+          ],
           'circle-stroke-color': '#ffffff'
         }
       });
@@ -496,16 +523,26 @@ export const MapView: React.FC<MapViewProps> = ({
         {activePopupLead && (
           <div className="absolute bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-30 w-11/12 max-w-sm bg-white border border-[#EDEDEB] rounded-xl p-4 shadow-xl text-[#37352F]">
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="flex items-center gap-1.5 mb-1">
+              <div className="flex-1 min-w-0 pr-2">
+                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded ${STAGE_TAGS[activePopupLead.stage]?.bg} ${STAGE_TAGS[activePopupLead.stage]?.text}`}>
                     {STAGE_TAGS[activePopupLead.stage]?.label}
                   </span>
+                  {activePopupLead.notes?.includes('[INBOUND_APPLICATION]') && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/30">
+                      🎯 Application
+                    </span>
+                  )}
                   <span className="text-[11px] text-[#787774]">
                     {activePopupLead.cuisine || 'Restaurant'}
                   </span>
                 </div>
                 <h3 className="text-sm font-bold text-[#37352F]">{activePopupLead.name}</h3>
+                {activePopupLead.contact_person && (
+                  <p className="text-[11px] font-semibold text-[#FF5A1F] mt-0.5">
+                    Contact: {activePopupLead.contact_person}
+                  </p>
+                )}
                 <p className="text-xs text-[#787774] mt-0.5">{activePopupLead.address}</p>
               </div>
 

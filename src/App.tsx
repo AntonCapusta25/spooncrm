@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CrmLead, CrmProfile } from './types/crm';
+import { CrmLead, CrmProfile, isLeadApplication } from './types/crm';
 import { fetchLeads, fetchProfiles, supabase } from './lib/supabase';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
@@ -9,6 +9,8 @@ import { PipelineView } from './components/PipelineView';
 import { TableView } from './components/TableView';
 import { DailyRouteView } from './components/DailyRouteView';
 import { PosQueueView } from './components/PosQueueView';
+import { ApplicationsView } from './components/ApplicationsView';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { LeadDetailModal } from './components/LeadDetailModal';
 import { PosProofModal } from './components/PosProofModal';
 import { LoginPage } from './components/LoginPage';
@@ -21,11 +23,23 @@ export function App() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [profiles, setProfiles] = useState<CrmProfile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<CrmProfile | null>(null);
-  const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue'>('map');
+  const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications'>('map');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
+  const [mapFocusLead, setMapFocusLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Public Onboarding Flow trigger (can be accessed unauthenticated or via link)
+  const [showOnboardingFlow, setShowOnboardingFlow] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.location.search.includes('flow=onboarding') ||
+      window.location.search.includes('mode=onboarding') ||
+      window.location.pathname.includes('/onboarding') ||
+      window.location.hash.includes('onboarding')
+    );
+  });
 
   // Notion Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -172,6 +186,7 @@ export function App() {
   }, [leads, filters]);
 
   const posHandoverCount = leads.filter(l => l.stage === 'pos_handover').length;
+  const applicationsCount = useMemo(() => leads.filter(l => isLeadApplication(l)).length, [leads]);
 
   // 1. Loading auth state
   if (isCheckingAuth) {
@@ -183,7 +198,20 @@ export function App() {
     );
   }
 
-  // 2. Gated: Show Simple Notion Login if not authenticated
+  // 2. Public Standalone Onboarding Flow (Accessible unauthenticated or via direct link)
+  if (showOnboardingFlow) {
+    return (
+      <OnboardingFlow
+        onExit={() => {
+          setShowOnboardingFlow(false);
+          window.history.replaceState({}, '', window.location.pathname);
+          loadLeadsQuietly();
+        }}
+      />
+    );
+  }
+
+  // 3. Gated: Show Simple Notion Login if not authenticated
   if (!session) {
     return (
       <LoginPage 
@@ -193,11 +221,12 @@ export function App() {
             if (session) loadData(session.user);
           });
         }} 
+        onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
       />
     );
   }
 
-  // 3. Authenticated: Render Notion Workspace
+  // 4. Authenticated: Render Notion Workspace
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden bg-white text-[#37352F] font-['Inter',sans-serif]">
       
@@ -207,6 +236,7 @@ export function App() {
         onTabChange={setCurrentTab}
         currentProfile={currentProfile}
         posQueueCount={posHandoverCount}
+        applicationsCount={applicationsCount}
         totalLeadsCount={leads.length}
         selectedDistrict={filters.district}
         onDistrictSelect={(d) => {
@@ -214,6 +244,7 @@ export function App() {
           setCurrentTab('map');
         }}
         onLogout={handleLogout}
+        onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />
@@ -228,10 +259,12 @@ export function App() {
           searchQuery={filters.search}
           onSearchChange={(q) => setFilters(prev => ({ ...prev, search: q }))}
           posQueueCount={posHandoverCount}
+          applicationsCount={applicationsCount}
           totalLeadsCount={leads.length}
           onNewLeadClick={() => {
             alert("To add a new lead, drop a pin on the map or click + New at the bottom of any Board column.");
           }}
+          onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
           onMenuClick={() => setMobileMenuOpen(true)}
         />
 
@@ -254,6 +287,22 @@ export function App() {
             </div>
           ) : (
             <>
+              {currentTab === 'applications' && (
+                <ApplicationsView
+                  leads={leads}
+                  profiles={profiles}
+                  currentProfile={currentProfile}
+                  onSelectLead={setSelectedLead}
+                  onOpenProofModal={setProofModalLead}
+                  onNavigateToMap={(lead) => {
+                    setMapFocusLead(lead);
+                    setCurrentTab('map');
+                  }}
+                  onRefresh={loadLeadsQuietly}
+                  onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
+                />
+              )}
+
               {currentTab === 'map' && (
                 <MapView
                   leads={filteredLeads}
@@ -261,6 +310,7 @@ export function App() {
                   onCheckInLead={(lead) => setSelectedLead(lead)}
                   onOpenProofModal={setProofModalLead}
                   selectedDistrict={filters.district}
+                  focusLead={mapFocusLead}
                 />
               )}
 
@@ -310,6 +360,7 @@ export function App() {
           currentTab={currentTab}
           onTabChange={setCurrentTab}
           posQueueCount={posHandoverCount}
+          applicationsCount={applicationsCount}
         />
 
       </div>
