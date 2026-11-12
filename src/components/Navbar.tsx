@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [copied, setCopied] = React.useState(false);
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}${window.location.pathname}?flow=onboarding`;
+    const url = `${window.location.origin}/`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

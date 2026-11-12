@@ -17,29 +17,45 @@ import { LoginPage } from './components/LoginPage';
 import { MobileTabBar } from './components/MobileTabBar';
 import { Loader2 } from 'lucide-react';
 
+function checkIsAdminRoute(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  return (
+    path === '/admin' ||
+    path.startsWith('/admin/') ||
+    hash.includes('admin') ||
+    search.includes('admin')
+  );
+}
+
 export function App() {
+  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(checkIsAdminRoute);
   const [session, setSession] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [profiles, setProfiles] = useState<CrmProfile[]>([]);
   const [currentProfile, setCurrentProfile] = useState<CrmProfile | null>(null);
-  const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications'>('map');
+  const [currentTab, setCurrentTab] = useState<'map' | 'pipeline' | 'table' | 'route' | 'pos_queue' | 'applications'>('applications');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
   const [mapFocusLead, setMapFocusLead] = useState<CrmLead | null>(null);
   const [proofModalLead, setProofModalLead] = useState<CrmLead | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  // Public Onboarding Flow trigger (can be accessed unauthenticated or via link)
-  const [showOnboardingFlow, setShowOnboardingFlow] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      window.location.search.includes('flow=onboarding') ||
-      window.location.search.includes('mode=onboarding') ||
-      window.location.pathname.includes('/onboarding') ||
-      window.location.hash.includes('onboarding')
-    );
-  });
+
+  // Sync route changes between / (Homepage = Onboarding) and /admin (Internal CRM)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setIsAdminRoute(checkIsAdminRoute());
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
 
   // Notion Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -188,30 +204,22 @@ export function App() {
   const posHandoverCount = leads.filter(l => l.stage === 'pos_handover').length;
   const applicationsCount = useMemo(() => leads.filter(l => isLeadApplication(l)).length, [leads]);
 
-  // 1. Loading auth state
+  // 1. PUBLIC HOMEPAGE (/) -> The Typeform Partner Onboarding Flow!
+  if (!isAdminRoute) {
+    return <OnboardingFlow />;
+  }
+
+  // 2. INTERNAL ADMIN SIDE (/admin) -> Check Auth
   if (isCheckingAuth) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center gap-2 bg-white text-[#787774]">
         <Loader2 className="w-5 h-5 animate-spin text-[#FF5A1F]" />
-        <p className="text-xs font-medium">Connecting to Spoonful...</p>
+        <p className="text-xs font-medium">Connecting to Spoonful Ops...</p>
       </div>
     );
   }
 
-  // 2. Public Standalone Onboarding Flow (Accessible unauthenticated or via direct link)
-  if (showOnboardingFlow) {
-    return (
-      <OnboardingFlow
-        onExit={() => {
-          setShowOnboardingFlow(false);
-          window.history.replaceState({}, '', window.location.pathname);
-          loadLeadsQuietly();
-        }}
-      />
-    );
-  }
-
-  // 3. Gated: Show Simple Notion Login if not authenticated
+  // 3. /admin Gated: Show Simple Notion Login if not authenticated
   if (!session) {
     return (
       <LoginPage 
@@ -225,7 +233,7 @@ export function App() {
     );
   }
 
-  // 4. Authenticated: Render Notion Workspace
+  // 4. Authenticated: Render Notion Workspace (/admin)
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden bg-white text-[#37352F] font-['Inter',sans-serif]">
       
@@ -243,7 +251,7 @@ export function App() {
           setCurrentTab('map');
         }}
         onLogout={handleLogout}
-        onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
+        onOpenOnboardingFlow={() => window.open('/', '_blank')}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />
@@ -263,7 +271,7 @@ export function App() {
           onNewLeadClick={() => {
             alert("To add a new lead, drop a pin on the map or click + New at the bottom of any Board column.");
           }}
-          onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
+          onOpenOnboardingFlow={() => window.open('/', '_blank')}
           onMenuClick={() => setMobileMenuOpen(true)}
         />
 
@@ -298,7 +306,7 @@ export function App() {
                     setCurrentTab('map');
                   }}
                   onRefresh={loadLeadsQuietly}
-                  onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
+                  onOpenOnboardingFlow={() => window.open('/', '_blank')}
                 />
               )}
 

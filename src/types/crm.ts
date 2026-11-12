@@ -93,6 +93,7 @@ export interface OnboardingApplicationData {
   role?: string;
   phone: string;
   email: string;
+  hasOwnDelivery?: string;
   preferredContact?: 'call' | 'whatsapp' | 'email';
   matchedLeadId?: string;
   address?: string;
@@ -115,6 +116,7 @@ export function parseApplicationDetails(lead: CrmLead) {
   const phoneMatch = text.match(/Phone:\s*([^|\n]+)/i);
   const emailMatch = text.match(/Email:\s*([^|\n]+)/i);
   const thuisbezorgdMatch = text.match(/Thuisbezorgd:\s*([^|\n]+)/i);
+  const deliveryMatch = text.match(/Delivery:\s*([^|\n]+)/i);
   const dateMatch = text.match(/Date:\s*([^|\n]+)/i);
   const contactPrefMatch = text.match(/Preference:\s*([^|\n]+)/i);
 
@@ -123,6 +125,7 @@ export function parseApplicationDetails(lead: CrmLead) {
     phone: phoneMatch ? phoneMatch[1].trim() : lead.phone || '',
     email: emailMatch ? emailMatch[1].trim() : lead.email || '',
     thuisbezorgdUrl: thuisbezorgdMatch && thuisbezorgdMatch[1].trim() !== 'N/A' ? thuisbezorgdMatch[1].trim() : lead.website || '',
+    hasOwnDelivery: deliveryMatch ? deliveryMatch[1].trim() : '',
     date: dateMatch ? dateMatch[1].trim() : lead.updated_at,
     contactPreference: contactPrefMatch ? contactPrefMatch[1].trim() : 'call'
   };

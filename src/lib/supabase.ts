@@ -230,7 +230,7 @@ export async function submitOnboardingApplication(
 ): Promise<{ success: boolean; lead: CrmLead | null; isNewLead: boolean; message: string }> {
   try {
     const now = new Date().toISOString();
-    const appNote = `[INBOUND_APPLICATION] Date: ${now} | Applicant: ${payload.contactPerson} (${payload.role || 'Partner'}) | Phone: ${payload.phone} | Email: ${payload.email} | Thuisbezorgd: ${payload.thuisbezorgdUrl || 'N/A'} | Preference: ${payload.preferredContact || 'call'}`;
+    const appNote = `[INBOUND_APPLICATION] Date: ${now} | Applicant: ${payload.contactPerson} (${payload.role || 'Partner'}) | Phone: ${payload.phone} | Email: ${payload.email} | Delivery: ${payload.hasOwnDelivery || 'Not specified'} | Thuisbezorgd: ${payload.thuisbezorgdUrl || 'N/A'} | Preference: ${payload.preferredContact || 'call'}`;
 
     let matchedLead: CrmLead | null = null;
 

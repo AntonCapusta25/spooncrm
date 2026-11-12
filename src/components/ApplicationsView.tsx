@@ -79,7 +79,7 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
   }, [applicationLeads, filterMode, search]);
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}${window.location.pathname}?flow=onboarding`;
+    const url = `${window.location.origin}/`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -249,6 +249,12 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                         ) : (
                           <span className="bg-[#F0FDF4] text-[#16A34A] border border-[#BBF7D0] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                             ✓ Matched Scraped Lead
+                          </span>
+                        )}
+
+                        {details?.hasOwnDelivery && (
+                          <span className="bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            🛵 {details.hasOwnDelivery}
                           </span>
                         )}
 

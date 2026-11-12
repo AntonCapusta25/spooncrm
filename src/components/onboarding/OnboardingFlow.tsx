@@ -18,8 +18,35 @@ const PHONE_NUMBER = '+3197010208809';
 const ONBOARDING_EMAIL = 'onboarding@spoonful.delivery';
 const CALENDLY_URL = 'https://calendly.com/homemademeals-info/interview-with-homemade';
 
+const DELIVERY_OPTIONS = [
+  {
+    id: 'own_delivery',
+    title: 'Yes, we have our own delivery',
+    description: 'We have our own in-house drivers and delivery team in Enschede',
+    icon: '🛵'
+  },
+  {
+    id: 'spoonful_fleet',
+    title: 'No, we need Spoonful delivery fleet',
+    description: 'We need Spoonful couriers to pick up and deliver our food orders',
+    icon: '🚲'
+  },
+  {
+    id: 'pickup_only',
+    title: 'Pickup & takeaway only',
+    description: 'Currently takeaway collection only, but open to delivery with Spoonful',
+    icon: '🛍️'
+  },
+  {
+    id: 'hybrid',
+    title: 'Hybrid / Both options',
+    description: 'Our drivers for nearby zones + Spoonful delivery fleet for wider reach',
+    icon: '🔄'
+  }
+];
+
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialLead }) => {
-  // Step state: 1 = Restaurant, 2 = Contact Person, 3 = Phone & Email, 4 = Congrats
+  // Step state: 1 = Restaurant, 2 = Own Delivery, 3 = Contact Person, 4 = Phone & Email, 5 = Congrats
   const [step, setStep] = useState<number>(1);
 
   // Form State
@@ -27,6 +54,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(initialLead || null);
   const [thuisbezorgdUrl, setThuisbezorgdUrl] = useState<string>(initialLead?.website || '');
   const [isThuisbezorgdLink, setIsThuisbezorgdLink] = useState<boolean>(false);
+  const [hasOwnDelivery, setHasOwnDelivery] = useState<string>('Yes, we have our own drivers');
   const [contactName, setContactName] = useState<string>(initialLead?.contact_person || '');
   const [role, setRole] = useState<string>('Owner / Proprietor');
   const [phone, setPhone] = useState<string>(initialLead?.phone || '+31 ');
@@ -108,34 +136,33 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
 
   // Focus input on step change
   useEffect(() => {
-    if (step < 4) {
+    if (step === 1 || step === 3 || step === 4) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [step]);
 
-  // Trigger celebration confetti when entering congrats screen
+  // Trigger celebration confetti when entering congrats screen (Step 5)
   useEffect(() => {
-    if (step === 4) {
+    if (step === 5) {
       fireCelebration();
     }
   }, [step]);
 
-  // Step 1 Validation
+  // Step Validations
   const canProceedStep1 = restaurantInput.trim().length > 1;
+  const canProceedStep2 = hasOwnDelivery.trim().length > 0;
+  const canProceedStep3 = contactName.trim().length > 1;
 
-  // Step 2 Validation
-  const canProceedStep2 = contactName.trim().length > 1;
-
-  // Step 3 Validation (phone must have at least 8 digits)
+  // Step 4 Validation (phone must have at least 8 digits)
   const cleanPhone = phone.replace(/\D/g, '');
   const isValidPhone = cleanPhone.length >= 8;
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canProceedStep3 = isValidPhone && isValidEmail;
+  const canProceedStep4 = isValidPhone && isValidEmail;
 
   // Handle Form Submit
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!canProceedStep3 || isSubmitting) return;
+    if (!canProceedStep4 || isSubmitting) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -143,6 +170,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
     const payload: OnboardingApplicationData = {
       restaurantName: selectedLead?.name || (isThuisbezorgdLink ? extractNameFromUrl(thuisbezorgdUrl) || restaurantInput : restaurantInput),
       thuisbezorgdUrl: isThuisbezorgdLink ? restaurantInput : thuisbezorgdUrl || undefined,
+      hasOwnDelivery: hasOwnDelivery,
       contactPerson: contactName.trim(),
       role: role,
       phone: phone.trim(),
@@ -161,7 +189,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
         isNewLead: res.isNewLead
       });
       setIsSubmitting(false);
-      setStep(4);
+      setStep(5);
     } else {
       setIsSubmitting(false);
       setErrorMessage(res.message || 'Failed to submit application. Please check your network connection.');
@@ -174,7 +202,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
       e.preventDefault();
       if (step === 1 && canProceedStep1) setStep(2);
       else if (step === 2 && canProceedStep2) setStep(3);
-      else if (step === 3 && canProceedStep3) handleSubmit();
+      else if (step === 3 && canProceedStep3) setStep(4);
+      else if (step === 4 && canProceedStep4) handleSubmit();
     }
   };
 
@@ -257,7 +286,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
       <div className="w-full bg-[#E4E4E7] h-1.5 relative overflow-hidden">
         <div 
           className="h-full bg-gradient-to-r from-[#FF5A1F] to-[#FF8A50] transition-all duration-500 ease-out"
-          style={{ width: `${(step / 4) * 100}%` }}
+          style={{ width: `${(step / 5) * 100}%` }}
         />
       </div>
 
@@ -265,16 +294,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 max-w-3xl mx-auto w-full relative">
         
         {/* Step Indicator Tag */}
-        {step < 4 && (
+        {step < 5 && (
           <div className="w-full mb-4 flex items-center justify-between text-xs font-semibold text-[#71717A]">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#FF5A1F]" />
-              Step {step} of 3
+              Step {step} of 4
             </span>
             <span className="text-[11px] text-[#A1A1AA]">
               {step === 1 && 'Restaurant Profile'}
-              {step === 2 && 'Representative'}
-              {step === 3 && 'Verification & Dispatch'}
+              {step === 2 && 'Delivery Setup'}
+              {step === 3 && 'Representative'}
+              {step === 4 && 'Verification & Dispatch'}
             </span>
           </div>
         )}
@@ -436,8 +466,88 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
           </div>
         )}
 
-        {/* STEP 2: Contact Person Name & Role */}
+        {/* STEP 2: Do you have your own delivery? */}
         {step === 2 && (
+          <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="space-y-2 mb-6 md:mb-8">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#18181B] tracking-tight">
+                Do you have your own delivery?
+              </h1>
+              <p className="text-sm md:text-base text-[#71717A]">
+                Tell us how food orders currently reach your customers in Enschede. Spoonful seamlessly supports both your own couriers and our delivery fleet.
+              </p>
+            </div>
+
+            {/* Delivery Option Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {DELIVERY_OPTIONS.map((opt) => {
+                const isSelected = hasOwnDelivery === opt.title;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setHasOwnDelivery(opt.title);
+                    }}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3.5 group ${
+                      isSelected
+                        ? 'border-[#FF5A1F] bg-[#FFF1EB]/60 shadow-sm ring-2 ring-[#FF5A1F]/20'
+                        : 'border-[#E4E4E7] bg-white hover:border-[#D4D4D8] hover:bg-[#FAFAFA]'
+                    }`}
+                  >
+                    <span className="text-2xl shrink-0 p-2 rounded-xl bg-white border border-[#E4E4E7] shadow-2xs group-hover:scale-110 transition-transform">
+                      {opt.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className={`text-sm font-bold ${isSelected ? 'text-[#FF5A1F]' : 'text-[#18181B]'}`}>
+                          {opt.title}
+                        </p>
+                        {isSelected && (
+                          <span className="w-5 h-5 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#71717A] mt-1 leading-relaxed">
+                        {opt.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="mt-8 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#71717A] hover:text-[#18181B] px-3 py-2 rounded-lg hover:bg-white transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={!canProceedStep2}
+                onClick={() => setStep(3)}
+                className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all shadow-md cursor-pointer ${
+                  canProceedStep2
+                    ? 'bg-[#FF5A1F] hover:bg-[#E04B14] text-white shadow-[#FF5A1F]/30 hover:scale-[1.02]'
+                    : 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed shadow-none'
+                }`}
+              >
+                <span>Continue</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Contact Person Name & Role */}
+        {step === 3 && (
           <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="space-y-2 mb-6 md:mb-8">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#18181B] tracking-tight">
@@ -495,7 +605,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
             <div className="mt-8 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-[#71717A] hover:text-[#18181B] px-3 py-2 rounded-lg hover:bg-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -504,10 +614,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
 
               <button
                 type="button"
-                disabled={!canProceedStep2}
-                onClick={() => setStep(3)}
+                disabled={!canProceedStep3}
+                onClick={() => setStep(4)}
                 className={`flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm transition-all shadow-md cursor-pointer ${
-                  canProceedStep2
+                  canProceedStep3
                     ? 'bg-[#FF5A1F] hover:bg-[#E04B14] text-white shadow-[#FF5A1F]/30 hover:scale-[1.02]'
                     : 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed shadow-none'
                 }`}
@@ -519,8 +629,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
           </div>
         )}
 
-        {/* STEP 3: Phone Number & Email */}
-        {step === 3 && (
+        {/* STEP 4: Phone Number & Email */}
+        {step === 4 && (
           <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="space-y-2 mb-6 md:mb-8">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#18181B] tracking-tight">
@@ -615,7 +725,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
             <div className="mt-8 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-[#71717A] hover:text-[#18181B] px-3 py-2 rounded-lg hover:bg-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -624,10 +734,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
 
               <button
                 type="button"
-                disabled={!canProceedStep3 || isSubmitting}
+                disabled={!canProceedStep4 || isSubmitting}
                 onClick={() => handleSubmit()}
                 className={`flex items-center gap-2 px-7 py-4 rounded-xl font-bold text-sm md:text-base transition-all shadow-lg cursor-pointer ${
-                  canProceedStep3 && !isSubmitting
+                  canProceedStep4 && !isSubmitting
                     ? 'bg-[#FF5A1F] hover:bg-[#E04B14] text-white shadow-[#FF5A1F]/30 hover:scale-[1.02]'
                     : 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed shadow-none'
                 }`}
@@ -648,8 +758,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
           </div>
         )}
 
-        {/* STEP 4: CONGRATS SCREEN & ACTIONS */}
-        {step === 4 && (
+        {/* STEP 5: CONGRATS SCREEN & ACTIONS */}
+        {step === 5 && (
           <div className="w-full text-center animate-in zoom-in-95 duration-500 py-4">
             
             {/* Big Party Icon */}
@@ -689,6 +799,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                   <span className="font-semibold text-[#18181B]">{contactName} ({role})</span>
                 </div>
                 <div>
+                  <span className="text-[#A1A1AA] block">Delivery Model</span>
+                  <span className="font-semibold text-[#18181B]">{hasOwnDelivery}</span>
+                </div>
+                <div>
                   <span className="text-[#A1A1AA] block">Direct Phone</span>
                   <span className="font-semibold text-[#18181B]">{phone}</span>
                 </div>
@@ -696,7 +810,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                   <span className="text-[#A1A1AA] block">Email</span>
                   <span className="font-semibold text-[#18181B] truncate block">{email}</span>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <span className="text-[#A1A1AA] block">Application Status</span>
                   <span className="font-bold text-[#FF5A1F] flex items-center gap-1">
                     ⚡ Under Priority Review
