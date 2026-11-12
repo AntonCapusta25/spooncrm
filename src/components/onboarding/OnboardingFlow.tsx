@@ -13,9 +13,9 @@ interface OnboardingFlowProps {
   initialLead?: CrmLead | null;
 }
 
-const WHATSAPP_NUMBER = '3197010208809';
-const PHONE_NUMBER = '+3197010208809';
-const ONBOARDING_EMAIL = 'onboarding@spoonful.delivery';
+const WHATSAPP_NUMBER = '31687196711';
+const PHONE_NUMBER = '+31687196711';
+const ONBOARDING_EMAIL = 'info@spoonfull.nl';
 const CALENDLY_URL = 'https://calendly.com/homemademeals-info/interview-with-homemade';
 
 const DELIVERY_OPTIONS = [
