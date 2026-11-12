@@ -21,27 +21,21 @@ const CALENDLY_URL = 'https://calendly.com/homemademeals-info/interview-with-hom
 const DELIVERY_OPTIONS = [
   {
     id: 'own_delivery',
-    title: 'Yes, we have our own delivery',
-    description: 'We have our own in-house drivers and delivery team in Enschede',
+    title: 'Yes, we do our own delivery',
+    description: 'We have our own drivers to deliver orders to customers in Enschede',
     icon: '🛵'
   },
   {
-    id: 'spoonful_fleet',
-    title: 'No, we need Spoonful delivery fleet',
-    description: 'We need Spoonful couriers to pick up and deliver our food orders',
-    icon: '🚲'
-  },
-  {
     id: 'pickup_only',
-    title: 'Pickup & takeaway only',
-    description: 'Currently takeaway collection only, but open to delivery with Spoonful',
+    title: 'No, takeaway & pickup only',
+    description: 'Customers collect their food orders directly at our restaurant',
     icon: '🛍️'
   },
   {
-    id: 'hybrid',
-    title: 'Hybrid / Both options',
-    description: 'Our drivers for nearby zones + Spoonful delivery fleet for wider reach',
-    icon: '🔄'
+    id: 'planning_delivery',
+    title: 'Not yet, but planning to start delivery',
+    description: 'Currently pickup only, looking to set up our own delivery drivers soon',
+    icon: '📦'
   }
 ];
 
@@ -54,7 +48,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(initialLead || null);
   const [thuisbezorgdUrl, setThuisbezorgdUrl] = useState<string>(initialLead?.website || '');
   const [isThuisbezorgdLink, setIsThuisbezorgdLink] = useState<boolean>(false);
-  const [hasOwnDelivery, setHasOwnDelivery] = useState<string>('Yes, we have our own drivers');
+  const [hasOwnDelivery, setHasOwnDelivery] = useState<string>('Yes, we do our own delivery');
   const [contactName, setContactName] = useState<string>(initialLead?.contact_person || '');
   const [role, setRole] = useState<string>('Owner / Proprietor');
   const [phone, setPhone] = useState<string>(initialLead?.phone || '+31 ');
@@ -474,12 +468,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                 Do you have your own delivery?
               </h1>
               <p className="text-sm md:text-base text-[#71717A]">
-                Tell us how food orders currently reach your customers in Enschede. Spoonful seamlessly supports both your own couriers and our delivery fleet.
+                Let us know how food orders are fulfilled at your restaurant in Enschede.
               </p>
             </div>
 
             {/* Delivery Option Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-1 gap-3 mb-6">
               {DELIVERY_OPTIONS.map((opt) => {
                 const isSelected = hasOwnDelivery === opt.title;
                 return (
