@@ -221,7 +221,6 @@ export function App() {
             if (session) loadData(session.user);
           });
         }} 
-        onOpenOnboardingFlow={() => setShowOnboardingFlow(true)}
       />
     );
   }

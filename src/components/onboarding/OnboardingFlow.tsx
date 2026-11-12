@@ -250,16 +250,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
             <Phone className="w-3.5 h-3.5 text-[#FF5A1F]" />
             <span className="hidden xs:inline">Call Us</span>
           </button>
-
-          {onExit && (
-            <button
-              onClick={onExit}
-              className="p-1.5 rounded-lg hover:bg-[#F4F4F5] text-[#71717A] hover:text-[#18181B] transition-colors ml-1"
-              title="Exit to CRM"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
         </div>
       </header>
 
@@ -357,7 +347,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                     </div>
                   </div>
                   <span className="bg-[#22C55E]/15 text-[#15803D] font-bold text-[10px] px-2 py-0.5 rounded-md shrink-0">
-                    Verified Scraped Lead
+                    Verified Location
                   </span>
                 </div>
               )}
@@ -372,7 +362,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                     </span>
                   </div>
                   <span className="bg-[#FF5A1F]/15 text-[#C2410C] font-bold text-[10px] px-2 py-0.5 rounded-md">
-                    Instant Import
+                    Store Link Ready
                   </span>
                 </div>
               )}
@@ -381,8 +371,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
               {searchFocused && searchResults.length > 0 && !selectedLead && (
                 <div className="mt-2 bg-white rounded-2xl border border-[#E4E4E7] shadow-xl overflow-hidden divide-y divide-[#F4F4F5] max-h-64 overflow-y-auto">
                   <div className="p-2.5 bg-[#FAFAFA] text-[11px] font-semibold text-[#71717A] flex items-center justify-between">
-                    <span>Found in Enschede database ({searchResults.length} matches):</span>
-                    <span className="text-[#FF5A1F]">Click to auto-match</span>
+                    <span>Suggestions in Enschede ({searchResults.length}):</span>
+                    <span className="text-[#FF5A1F]">Click to select</span>
                   </div>
                   {searchResults.map((lead) => (
                     <button
@@ -408,7 +398,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                         </p>
                       </div>
                       <span className="text-xs text-[#FF5A1F] font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Match <Check className="w-3.5 h-3.5" />
+                        Select <Check className="w-3.5 h-3.5" />
                       </span>
                     </button>
                   ))}
@@ -689,7 +679,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                 </div>
                 <span className="bg-[#22C55E]/15 text-[#16A34A] text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {submitResult?.isNewLead ? 'New Map Point Created' : 'Matched CRM Lead'}
+                  Application Submitted
                 </span>
               </div>
 
@@ -707,9 +697,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                   <span className="font-semibold text-[#18181B] truncate block">{email}</span>
                 </div>
                 <div>
-                  <span className="text-[#A1A1AA] block">Priority Status</span>
+                  <span className="text-[#A1A1AA] block">Application Status</span>
                   <span className="font-bold text-[#FF5A1F] flex items-center gap-1">
-                    ⚡ Urgent Dispatch Queue
+                    ⚡ Under Priority Review
                   </span>
                 </div>
               </div>
@@ -767,7 +757,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
             </div>
 
             {/* Back to Home / Reset */}
-            <div className="mt-8 pt-6 border-t border-[#E4E4E7] flex items-center justify-center gap-4">
+            <div className="mt-8 pt-6 border-t border-[#E4E4E7] flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => {
@@ -779,24 +769,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
                   setEmail('');
                   setSubmitResult(null);
                 }}
-                className="text-xs text-[#71717A] hover:text-[#18181B] font-semibold flex items-center gap-1.5"
+                className="text-xs text-[#71717A] hover:text-[#18181B] font-semibold flex items-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Submit another restaurant</span>
+                <span>Submit another restaurant application</span>
               </button>
-
-              {onExit && (
-                <>
-                  <span className="text-[#D4D4D8]">•</span>
-                  <button
-                    type="button"
-                    onClick={onExit}
-                    className="text-xs text-[#FF5A1F] hover:underline font-bold"
-                  >
-                    View in Spoonful CRM Dashboard →
-                  </button>
-                </>
-              )}
             </div>
 
           </div>
