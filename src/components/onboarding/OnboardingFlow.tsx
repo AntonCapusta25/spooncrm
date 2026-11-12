@@ -228,60 +228,35 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
   return (
     <div 
       onKeyDown={handleKeyDown}
-      className="min-h-[100dvh] w-screen bg-[#FAFAFA] text-[#18181B] flex flex-col font-['Inter',sans-serif] selection:bg-[#FF5A1F]/20 relative overflow-x-hidden"
+      className="min-h-[100dvh] w-screen bg-[#FAFAFA] text-[#18181B] flex flex-col font-['Inter',sans-serif] selection:bg-[#FF5A1F]/20 relative overflow-x-hidden pt-8 md:pt-12"
     >
-      {/* Top Floating Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#E4E4E7] px-4 md:px-8 py-3.5 flex items-center justify-between">
-        
-        {/* Spoonful Logo & Title */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5A1F] to-[#FF8A50] text-white flex items-center justify-center text-lg font-bold shadow-sm shadow-[#FF5A1F]/25">
-            🥄
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm md:text-base tracking-tight text-[#18181B]">
-                Spoonful
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FFF1EB] text-[#FF5A1F] border border-[#FF5A1F]/20">
-                Partner Onboarding
-              </span>
-            </div>
-            <p className="text-[11px] text-[#71717A] hidden sm:block">
-              Enschede & Twente Restaurant Network
-            </p>
-          </div>
-        </div>
-
-        {/* Right Action: Contact Pills & Optional Exit */}
-        <div className="flex items-center gap-2">
-          {/* Quick Support Pill */}
-          <button
-            onClick={handleWhatsApp}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] text-xs font-semibold transition-all border border-[#25D366]/30 cursor-pointer"
-            title="Chat on WhatsApp"
-          >
-            <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-            <span>WhatsApp</span>
-          </button>
-
-          <button
-            onClick={handleCall}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#3F3F46] text-xs font-semibold transition-all border border-[#E4E4E7] cursor-pointer"
-            title="Call Support"
-          >
-            <Phone className="w-3.5 h-3.5 text-[#FF5A1F]" />
-            <span className="hidden xs:inline">Call Us</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Progress Bar (Typeform Style) */}
-      <div className="w-full bg-[#E4E4E7] h-1.5 relative overflow-hidden">
+      {/* Progress Bar (Typeform Style at the very top) */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-[#E4E4E7] h-1.5 overflow-hidden">
         <div 
           className="h-full bg-gradient-to-r from-[#FF5A1F] to-[#FF8A50] transition-all duration-500 ease-out"
           style={{ width: `${(step / 5) * 100}%` }}
         />
+      </div>
+
+      {/* Floating Contact Support Buttons (Top Right) */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <button
+          onClick={handleWhatsApp}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] text-xs font-semibold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs hover:scale-105"
+          title="Chat on WhatsApp"
+        >
+          <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+          <span className="hidden xs:inline">WhatsApp</span>
+        </button>
+
+        <button
+          onClick={handleCall}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#F4F4F5] text-[#3F3F46] text-xs font-semibold transition-all border border-[#E4E4E7] cursor-pointer shadow-xs hover:scale-105"
+          title="Call Support"
+        >
+          <Phone className="w-3.5 h-3.5 text-[#FF5A1F]" />
+          <span>Call Us</span>
+        </button>
       </div>
 
       {/* Main Typeform Card Canvas */}
@@ -888,11 +863,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onExit, initialL
         )}
 
       </main>
-
-      {/* Footer Branding */}
-      <footer className="py-4 text-center text-xs text-[#A1A1AA] border-t border-[#E4E4E7] bg-white/50">
-        <span>Spoonful B.V. • Partner Network Enschede • Secure TLS 1.3 Transmission</span>
-      </footer>
 
     </div>
   );
